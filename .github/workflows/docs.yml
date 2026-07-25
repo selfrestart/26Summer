@@ -18,12 +18,10 @@ jobs:
         working-directory: repro-forge
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.12"
+          enable-cache: true
       - name: Install documentation dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[all,dev]"
+        run: uv sync --locked --group dev --python 3.13
       - name: Build documentation
-        run: mkdocs build --clean --strict -f docs/mkdocs.yml
+        run: uv run mkdocs build --clean --strict -f docs/mkdocs.yml

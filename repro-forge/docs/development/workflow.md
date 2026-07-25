@@ -12,7 +12,7 @@
   ```bash
   # macOS / Linux
   curl -LsSf https://astral.sh/uv/install.sh | sh
-  
+
   # Windows (PowerShell)
   powershell -ExecutionPolicy Bypass -c "irm https://astral.sh/uv/install.ps1 | iex"
   ```
@@ -246,9 +246,9 @@ develop 积累 PR
         ▼
   git tag vX.Y.Z
         │
-        ├── PyPI 自动发布 (release.yml)
-        ├── Docker 镜像推送 GHCR
-        └── GitHub Release 自动生成
+        ├── 构建 wheel + source distribution
+        ├── 隔离环境安装验证
+        └── 上传 GitHub Actions artifact
 ```
 
 ---

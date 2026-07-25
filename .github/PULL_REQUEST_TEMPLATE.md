@@ -30,10 +30,10 @@
 
 ## Checklist
 
-- [ ] Tests pass locally (`make test`)
-- [ ] Type checking passes (`make typecheck`)
-- [ ] Linting passes (`make lint`)
-- [ ] Formatting passes (`make format-check`)
+- [ ] Tests pass locally (`cd repro-forge && make test`)
+- [ ] Type checking passes (`cd repro-forge && make typecheck`)
+- [ ] Linting passes (`cd repro-forge && make lint`)
+- [ ] Formatting passes (`cd repro-forge && make format-check`)
 - [ ] Documentation updated (if applicable)
 - [ ] CHANGELOG updated (if user-facing)
 - [ ] New tests added for new functionality

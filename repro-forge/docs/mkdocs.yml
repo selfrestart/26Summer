@@ -1,6 +1,8 @@
 site_name: ReproForge
 site_description: Automated Paper Reading & Reproduction for CS Research
 site_author: ReproForge Contributors
+docs_dir: .
+site_dir: ../site
 repo_name: selfrestart/26Summer
 repo_url: https://github.com/selfrestart/26Summer
 edit_uri: edit/main/repro-forge/docs/

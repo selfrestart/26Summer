@@ -5,11 +5,10 @@
 **Automated Paper Reading, Methodology Analysis & Reproduction for CS Research**
 
 [![CI](https://github.com/selfrestart/26Summer/actions/workflows/ci.yml/badge.svg)](https://github.com/selfrestart/26Summer/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/repro-forge.svg)](https://pypi.org/project/repro-forge/)
-[![Python](https://img.shields.io/pypi/pyversions/repro-forge.svg)](https://pypi.org/project/repro-forge/)
+[![Status](https://img.shields.io/badge/status-P0%20core-yellow.svg)](#project-status)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-GitHub-blue)](https://github.com/selfrestart/26Summer/tree/main/repro-forge/docs)
-[![Discord](https://img.shields.io/discord/1234567890?color=5865F2&label=discord)](https://discord.gg/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 </div>
@@ -18,7 +17,7 @@
 
 ## What is ReproForge?
 
-ReproForge is a multi-agent framework that automates the end-to-end pipeline of reading, understanding, and reproducing computer science research papers. It equips researchers and engineers with **six specialized AI agents** that collaborate to:
+ReproForge aims to become a multi-agent framework for reading, understanding, and reproducing computer science research papers. The planned system uses **six specialized AI agents** that collaborate to:
 
 1. **Read** — parse PDFs into structured notes with layered summaries
 2. **Analyze** — extract algorithms, architectures, and mathematical derivations
@@ -30,6 +29,10 @@ ReproForge is a multi-agent framework that automates the end-to-end pipeline of 
 ---
 
 ## Key Features
+
+> **Roadmap, not current functionality:** the table below describes the target
+> product. P0 currently provides only the typed core models, abstract Agent
+> runtime, Provider interface, tests, packaging, and engineering automation.
 
 | Category | Feature |
 |----------|---------|
@@ -47,12 +50,12 @@ ReproForge is a multi-agent framework that automates the end-to-end pipeline of 
 
 ---
 
-## Quick Start
+## P0 Quick Start
 
 ### Prerequisites
 
 - [uv](https://docs.astral.sh/uv/) — fast Python package manager (auto-manages Python 3.11+ via `.python-version`)
-- An LLM API key (OpenAI, Anthropic, or any OpenAI-compatible endpoint)
+- No API key is required for the current P0 core and test suite
 
 ### Installation
 
@@ -60,16 +63,19 @@ ReproForge is a multi-agent framework that automates the end-to-end pipeline of 
 # Clone and one-command setup
 git clone https://github.com/selfrestart/26Summer.git
 cd 26Summer/repro-forge
-make setup          # venv + deps + pre-commit hooks
+uv sync --locked --group dev
 
-# Or manually:
-uv venv && uv sync --all-extras
-
-# For pip users:
-pip install -e ".[all]"
+# Verify the installed package and engineering baseline
+uv run repro-forge
+uv run pytest
+uv run ruff check repro_forge tests
+uv run mypy repro_forge
 ```
 
-### Environment Setup
+### Future Environment Setup
+
+The provider variables in `.env.example` are reserved for later phases and are
+not consumed by P0.
 
 ```bash
 cp .env.example .env
@@ -77,6 +83,9 @@ cp .env.example .env
 ```
 
 ### 5-Minute Quickstart
+
+> **Planned API:** the following example documents the intended P1/P2 API. The
+> imported classes do not exist in P0 and this code is not currently runnable.
 
 ```python
 from repro_forge.paper import PaperPipeline
@@ -104,6 +113,9 @@ for algo in insights.algorithms:
 ```
 
 ### Run a Full Reproduction
+
+> **Planned API:** reproduction is scheduled for P3/P4 and is not implemented
+> in P0.
 
 ```python
 from repro_forge.reproduction import ReproductionPipeline
@@ -168,11 +180,11 @@ Full documentation is available in the repository's [docs directory](https://git
 
 ---
 
-## Roadmap
+## Project Status
 
 | Phase | Status | Content |
 |-------|--------|---------|
-| P0 | 🚧 In Progress | Project infrastructure, CI/CD, docs skeleton |
+| P0 | ✅ Complete | Core abstractions, tests, packaging, CI, docs build, Docker package image |
 | P1 | 📋 Planned | Core runtime, PaperReader agent, PDF pipeline |
 | P2 | 📋 Planned | Methodologist, algorithm extraction, KG writes |
 | P3 | 📋 Planned | CodeForger, Docker sandbox execution |
@@ -182,13 +194,10 @@ Full documentation is available in the repository's [docs directory](https://git
 | P7 | 📋 Planned | Guardrails: code review, plagiarism detection |
 | P8 | 📋 Planned | Evaluation benchmarks, observability |
 
-See our [public project board](https://github.com/orgs/repro-forge/projects/1) for details.
-
 ---
 
 ## Community
 
-- 💬 [Discord](https://discord.gg/) — Real-time discussion & office hours
 - 🗣 [GitHub Discussions](https://github.com/selfrestart/26Summer/discussions) — Q&A & feature proposals
 - 🐛 [Issues](https://github.com/selfrestart/26Summer/issues) — Bug reports & tasks
 - 📖 [Contributing Guide](CONTRIBUTING.md) — How to get involved

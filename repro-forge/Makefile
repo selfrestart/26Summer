@@ -1,4 +1,4 @@
-.PHONY: help venv sync install install-dev clean lint format typecheck test test-cov docs serve pre-commit-all
+.PHONY: help venv sync install install-dev clean lint format typecheck test test-cov docs serve pre-commit-all docker-build docker-run
 
 .DEFAULT_GOAL := help
 
@@ -66,6 +66,12 @@ docs: ## Build documentation
 
 docs-serve: ## Serve documentation locally
 	uv run mkdocs serve -f docs/mkdocs.yml
+
+docker-build: ## Build the P0 package image
+	docker build -t repro-forge:p0 .
+
+docker-run: docker-build ## Run the P0 CLI from the package image
+	docker run --rm repro-forge:p0
 
 ci: ## Simulate CI pipeline locally
 	@echo "=== Format Check ==="

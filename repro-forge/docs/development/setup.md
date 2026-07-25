@@ -1,14 +1,14 @@
 ﻿# Phase 0 — 基础设施搭建
 
-> **状态**: ✅ 已完成  
-> **交付日期**: 2025-07-24  
+> **状态**: ✅ 已完成
+> **交付日期**: 2025-07-24
 > **版本**: v0.1.0-alpha
 
 ---
 
 ## 概述
 
-P0 阶段的目标是建立一个生产级 Python 开源项目所需的全套工程基础设施。在这一阶段，我们**不编写任何业务逻辑**，而是构建了支撑整个项目生命周期的骨架：从依赖管理、代码质量、测试框架到 CI/CD 流水线和开源社区治理。
+P0 阶段的目标是建立 Python 项目的工程基础设施和最小核心抽象。在这一阶段不实现论文解析、专项 Agent、真实 LLM Provider、API 或复现流水线，只提供类型系统、抽象运行时以及支撑后续开发的质量门禁。
 
 这相当于一座大厦的地基 —— 所有后续的 Agent 代码、论文管道、复现引擎都建立在它之上。
 
@@ -42,7 +42,7 @@ P0 阶段的目标是建立一个生产级 Python 开源项目所需的全套工
 
 **设计决策**:
 - 全部配置集中在 `pyproject.toml`，避免散落的配置文件
-- Ruff 目标版本 `py313`，规则集：pyflakes, pycodestyle, isort, pep8-naming, bugbear 等
+- Ruff 以最低支持版本 `py311` 为目标，规则集：pyflakes, pycodestyle, isort, pep8-naming, bugbear 等
 - Mypy 开启 `strict` 模式 —— 所有公开函数必须标注类型
 - 行宽 100 字符（平衡可读性和宽屏效率）
 
@@ -52,7 +52,7 @@ P0 阶段的目标是建立一个生产级 Python 开源项目所需的全套工
 |------|------|
 | `tests/conftest.py` | 全局测试夹具：`FakeLLMProvider`（模拟 LLM）、`FakeAgent`（测试用虚拟 Agent） |
 | `tests/unit/test_types.py` | 15 个单元测试，覆盖所有核心类型（Message, Action, Observation 等） |
-| `tests/unit/test_base_agent.py` | 6 个单元测试，覆盖 Agent 生命周期（Run/Stream/Exception/Trace） |
+| `tests/unit/test_base_agent.py` | 10 个单元测试，覆盖 Agent 生命周期、状态、步数预算、异常清理和 Trace 隔离 |
 
 ```
 tests/
@@ -72,25 +72,26 @@ tests/
 #### `ci.yml` — 持续集成
 
 ```
-PR → ruff format check → ruff lint → pre-commit → mypy → pytest (3.11 + 3.12 矩阵)
-                                                                  └→ codecov 上报
+PR → ruff format check → ruff lint → mypy → package build
+                                      └→ pytest (3.11 + 3.12 + 3.13)
+                                      └→ Docker P0 image build + CLI smoke test
 ```
 
-#### `release.yml` — 语义化发布
+#### `release.yml` — 发布产物验证
 
 ```
-git tag vX.Y.Z → build → PyPI 发布 + GHCR Docker 镜像 → GitHub Release
+git tag vX.Y.Z → build wheel/sdist → 隔离安装验证 → 上传 Actions artifact
 ```
 
-#### `docs.yml` — 文档站点
+#### `docs.yml` — 文档构建
 
 ```
-main 分支 push → mkdocs build → GitHub Pages 自动部署
+main 分支 push → mkdocs strict build
 ```
 
 **设计决策**:
-- PR 触发轻量检查（unit + integration），保护分支 push 触发 e2e
-- 使用矩阵测试确保 Python 3.11/3.12 兼容性
+- PR 和主分支 push 均执行质量、单元测试、包构建和 Docker smoke test
+- 使用矩阵测试确保 Python 3.11/3.12/3.13 兼容性
 - Dependabot 每周自动更新 pip + GitHub Actions 依赖
 
 ### 5. 核心运行时骨架
@@ -124,7 +125,7 @@ repro_forge/
 
 | 文件 | 用途 |
 |------|------|
-| `README.md` | 项目门面：14 个徽章 + 功能表 + Mermaid 架构图 + Quick Start |
+| `README.md` | 项目门面：当前 P0 状态、规划功能、安装验证和路线图 |
 | `LICENSE` | Apache 2.0（企业友好 + 专利保护） |
 | `CONTRIBUTING.md` | 开发流程、Commit 规范（Conventional Commits）、PR 流程 |
 | `CODE_OF_CONDUCT.md` | Contributor Covenant 2.1 |
@@ -139,8 +140,8 @@ repro_forge/
 
 | 文件 | 作用 |
 |------|------|
-| `Dockerfile` | 多阶段构建（builder + runtime），非 root 用户运行 |
-| `docker-compose.yml` | 全栈：API + Neo4j + ChromaDB + Jaeger |
+| `Dockerfile` | 多阶段构建当前 P0 Python 包，以非 root 用户运行占位 CLI |
+| `compose.future.yml` | P1+ 服务模板；P0 不依赖 Neo4j、ChromaDB 或 Jaeger |
 | `.dockerignore` | 排除 `.git`, `__pycache__`, `node_modules` 等 |
 
 ### 8. 文档站点
@@ -161,7 +162,7 @@ P0 阶段确立的工程原则将贯穿整个项目：
 2. **类型安全** — `mypy --strict`，所有公开接口必须有类型标注
 3. **Mock 驱动测试** — `FakeLLMProvider` 确保测试秒级完成，不依赖网络
 4. **渐进式依赖** — 按功能模块拆分 optional dependencies，不强制安装所有依赖
-5. **自动化一切** — `make setup` 一键安装，`make check` 一键验证，CI 自动发布
+5. **自动化验证** — `make setup` 一键安装，`make check` 一键验证；P0 只生成发布产物，不自动公开发布
 6. **开源优先** — 从 Day 1 就按开源标准建设（许可证、治理、安全、引用）
 
 ---
@@ -175,4 +176,4 @@ P0 阶段确立的工程原则将贯穿整个项目：
 | P2 | Methodologist + 知识图谱写入 | 📋 规划中 |
 | P3 | CodeForger + 实验执行 | 📋 规划中 |
 
-→ [进入 P1 开发](roadmap.md)
+P1 及后续阶段保持规划状态，不属于本轮 P0 交付。

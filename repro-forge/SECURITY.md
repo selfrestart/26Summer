@@ -41,4 +41,3 @@ We will acknowledge your report within 48 hours and provide a timeline for resol
 ## Dependency Scanning
 
 We use Dependabot to monitor dependencies. Critical CVEs are patched within 7 days.
-

@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.0
+    rev: v0.16.0
     hooks:
       - id: ruff
         name: ruff (lint)
@@ -24,14 +24,11 @@ repos:
       - id: mixed-line-ending
         args: [--fix=lf]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+  - repo: local
     hooks:
-      - id: mypy
-        additional_dependencies:
-          - pydantic>=2.7.0
-          - types-requests
-          - types-PyYAML
-        args: [--strict, --ignore-missing-imports]
-        files: ^repro_forge/
-        exclude: ^tests/
+      - id: mypy-repro-forge
+        name: mypy (ReproForge)
+        entry: uv run --directory repro-forge mypy repro_forge
+        language: system
+        pass_filenames: false
+        files: ^repro-forge/repro_forge/

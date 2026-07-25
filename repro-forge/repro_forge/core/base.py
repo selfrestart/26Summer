@@ -9,6 +9,8 @@ from __future__ import annotations
 from abc import ABC
 from abc import abstractmethod
 from collections.abc import AsyncIterator
+from datetime import UTC
+from datetime import datetime
 
 from repro_forge.core.types import Action
 from repro_forge.core.types import AgentConfig
@@ -91,13 +93,18 @@ class BaseAgent(ABC):
         Returns:
             A TaskResult containing the output, status, and execution trace.
         """
-        await self.setup()
-        self._state = AgentState.THINKING
-        step_index = 0
+        self._trace = AgentTrace(
+            agent_id=self.config.agent_id,
+            agent_type=self.config.agent_type,
+        )
 
         try:
-            while step_index < self.config.max_steps:
+            await self.setup()
+            step_limit = min(self.config.max_steps, task.max_steps)
+
+            for step_index in range(step_limit):
                 # Think
+                self._state = AgentState.THINKING
                 thought = await self.think(task)
                 step = TraceStep(
                     step_index=step_index,
@@ -115,15 +122,13 @@ class BaseAgent(ABC):
                 step.observation = observation
 
                 self._trace.steps.append(step)
-                step_index += 1
 
                 # Decide whether to continue
                 if await self.should_stop(observation):
-                    self._state = AgentState.DONE
                     break
 
+            self._state = AgentState.DONE
             result = await self.finalize(task)
-            self._trace.final_state = self._state
             return result
 
         except Exception as exc:
@@ -136,6 +141,8 @@ class BaseAgent(ABC):
                 trace=self._trace,
             )
         finally:
+            self._trace.final_state = self._state
+            self._trace.end_time = datetime.now(UTC)
             await self.teardown()
 
     # ------------------------------------------------------------------
@@ -172,24 +179,37 @@ class BaseAgent(ABC):
         Yields each TraceStep as it completes. The default implementation
         wraps :meth:`run` but subclasses can override for true streaming.
         """
-        await self.setup()
-        self._state = AgentState.THINKING
+        self._trace = AgentTrace(
+            agent_id=self.config.agent_id,
+            agent_type=self.config.agent_type,
+        )
 
-        for step_index in range(self.config.max_steps):
-            step = TraceStep(step_index=step_index)
+        try:
+            await self.setup()
+            step_limit = min(self.config.max_steps, task.max_steps)
 
-            step.thought = await self.think(task)
-            self._state = AgentState.ACTING
+            for step_index in range(step_limit):
+                self._state = AgentState.THINKING
+                step = TraceStep(step_index=step_index)
 
-            step.action = await self.act(step.thought)
-            self._state = AgentState.OBSERVING
+                step.thought = await self.think(task)
+                self._state = AgentState.ACTING
 
-            step.observation = await self.observe(step.action)
-            self._trace.steps.append(step)
-            yield step
+                step.action = await self.act(step.thought)
+                self._state = AgentState.OBSERVING
 
-            if await self.should_stop(step.observation):
-                self._state = AgentState.DONE
-                break
+                step.observation = await self.observe(step.action)
+                self._trace.steps.append(step)
+                yield step
 
-        await self.teardown()
+                if await self.should_stop(step.observation):
+                    break
+
+            self._state = AgentState.DONE
+        except Exception:
+            self._state = AgentState.ERROR
+            raise
+        finally:
+            self._trace.final_state = self._state
+            self._trace.end_time = datetime.now(UTC)
+            await self.teardown()

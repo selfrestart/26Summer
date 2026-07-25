@@ -8,5 +8,5 @@ from __future__ import annotations
 
 def main() -> None:
     """Entry point for the repro-forge CLI."""
-    print("ReproForge CLI — coming soon")
-    print("Use the Python API or API server for now.")
+    print("ReproForge P0 core package is installed.")
+    print("Paper workflows, providers, and the API are planned for later phases.")

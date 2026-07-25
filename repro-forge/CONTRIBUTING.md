@@ -1,4 +1,4 @@
-﻿# Contributing to ReproForge
+# Contributing to ReproForge
 
 Thank you for your interest in contributing! This document outlines the development workflow, coding standards, and review process.
 
@@ -9,7 +9,7 @@ Thank you for your interest in contributing! This document outlines the developm
 ### Prerequisites
 
 - Python 3.11+ (automatically managed by `uv` via `.python-version`)
-- [uv](https://docs.astral.sh/uv/) 鈥?fast Python package manager
+- [uv](https://docs.astral.sh/uv/) - fast Python package manager
 - Git
 
 ### One-Command Setup
@@ -204,9 +204,8 @@ See [ARCHITECTURE.md](docs/architecture/overview.md) for a detailed description 
 
 ## Community
 
-- 馃挰 [Discord](https://discord.gg/) 鈥?Real-time chat
-- 馃棧 [GitHub Discussions](https://github.com/selfrestart/26Summer/discussions) 鈥?Q&A
-- 馃悰 [Issue Tracker](https://github.com/selfrestart/26Summer/issues) 鈥?Bugs & features
+- [GitHub Discussions](https://github.com/selfrestart/26Summer/discussions) - Q&A
+- [Issue Tracker](https://github.com/selfrestart/26Summer/issues) - bugs and features
 
 ### Looking for Issues?
 
@@ -222,4 +221,3 @@ This project adheres to the [Contributor Covenant](CODE_OF_CONDUCT.md). By parti
 ---
 
 Thank you for contributing!
-
