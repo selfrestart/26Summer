@@ -108,6 +108,7 @@ nav:
     - Workflow: development/workflow.md
     - Testing: development/testing.md
     - Release Process: development/release.md
+    - Interview Question Bank: interview-question-bank.md
     - P0 Design Rationale: P0-DESIGN-RATIONALE.md
     - P0 Technical Reference: P0-TECHNICAL-REFERENCE.md
   - Evaluation:
