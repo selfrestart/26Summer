@@ -87,7 +87,8 @@ nav:
     - Literature Survey: user-guide/literature-survey.md
     - Custom Agents: user-guide/custom-agent.md
   - Architecture:
-    - Overview: architecture/overview.md
+    - Overview (CN): architecture/overview.md
+    - Architecture (EN): ARCHITECTURE.md
     - Agent System: architecture/agent-system.md
     - Memory System: architecture/memory-system.md
     - Knowledge Graph: architecture/knowledge-graph.md
@@ -107,6 +108,8 @@ nav:
     - Workflow: development/workflow.md
     - Testing: development/testing.md
     - Release Process: development/release.md
+    - P0 Design Rationale: P0-DESIGN-RATIONALE.md
+    - P0 Technical Reference: P0-TECHNICAL-REFERENCE.md
   - Evaluation:
     - Benchmarks: evaluation/benchmarks.md
     - Results: evaluation/results.md
