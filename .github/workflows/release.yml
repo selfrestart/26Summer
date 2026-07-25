@@ -24,7 +24,7 @@ jobs:
           "$RUNNER_TEMP/repro-forge-wheel/bin/pip" install dist/*.whl
           "$RUNNER_TEMP/repro-forge-wheel/bin/repro-forge"
       - name: Upload package artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: repro-forge-dist
           path: repro-forge/dist/*
