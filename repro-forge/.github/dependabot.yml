@@ -1,0 +1,42 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "pip"
+    assignees:
+      - "maintainers"
+    groups:
+      testing:
+        patterns:
+          - "pytest*"
+          - "coverage*"
+      linters:
+        patterns:
+          - "ruff"
+          - "mypy"
+          - "pre-commit"
+      llm:
+        patterns:
+          - "openai"
+          - "anthropic"
+          - "litellm"
+          - "tiktoken"
+      docs:
+        patterns:
+          - "mkdocs*"
+          - "mkdocstrings*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "ci"

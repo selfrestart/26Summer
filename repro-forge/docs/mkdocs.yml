@@ -1,0 +1,110 @@
+site_name: ReproForge
+site_description: Automated Paper Reading & Reproduction for CS Research
+site_author: ReproForge Contributors
+repo_name: selfrestart/26Summer
+repo_url: https://github.com/selfrestart/26Summer
+edit_uri: edit/main/repro-forge/docs/
+
+copyright: Copyright &copy; 2025 ReproForge Contributors
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [..]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_category_heading: true
+            members_order: source
+            separate_signature: true
+            filters: ["!^_"]
+            heading_level: 2
+            show_signature_annotations: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quickstart: getting-started/quickstart.md
+    - Configuration: getting-started/configuration.md
+  - User Guide:
+    - Paper Reading: user-guide/paper-reading.md
+    - Reproduction: user-guide/reproduction.md
+    - Literature Survey: user-guide/literature-survey.md
+    - Custom Agents: user-guide/custom-agent.md
+  - Architecture:
+    - Overview: architecture/overview.md
+    - Agent System: architecture/agent-system.md
+    - Memory System: architecture/memory-system.md
+    - Knowledge Graph: architecture/knowledge-graph.md
+    - Reproduction Pipeline: architecture/reproduction-pipeline.md
+    - MCP Integration: architecture/mcp-integration.md
+  - API Reference:
+    - Core: api-reference/core.md
+    - Agents: api-reference/agents.md
+    - Tools: api-reference/tools.md
+    - MCP: api-reference/mcp.md
+  - Examples:
+    - Paper Deep-Dive: examples/paper-dive.md
+    - Reproduce a Paper: examples/reproduce.md
+    - Write a Survey: examples/survey.md
+  - Development:
+    - Setup: development/setup.md
+    - Workflow: development/workflow.md
+    - Testing: development/testing.md
+    - Release Process: development/release.md
+  - Evaluation:
+    - Benchmarks: evaluation/benchmarks.md
+    - Results: evaluation/results.md

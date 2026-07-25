@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+eggs/
+*.egg
+.eggs/
+*.manifest
+*.spec
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Testing & coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.pytest_cache/
+benchmark-results/
+.mypy_cache/
+.ruff_cache/
+
+# Documentation
+site/
+docs/_build/
+docs/api-reference/generated/
+
+# Docker
+data/
+logs/
+*.log
+
+# MLflow & experiment data
+mlruns/
+wandb/
+outputs/
+checkpoints/
+runs/
+
+# Secrets
+*.pem
+*.key
+credentials.json
+.env.local
+.env.production
+
+# Notebooks
+notebooks/.ipynb_checkpoints/
+.ipynb_checkpoints/
+
+# Neo4j
+neo4j-data/

@@ -1,0 +1,42 @@
+# Git
+.git
+.gitattributes
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+dist
+build
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+coverage.xml
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# Environment
+.env
+.env.local
+.venv
+
+# Test artifacts
+outputs
+mlruns
+checkpoints
+runs
+data
+
+# Documentation
+site
+docs/_build
+
+# CI
+.github

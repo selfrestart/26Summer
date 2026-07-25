@@ -1,0 +1,21 @@
+# Repository-wide generated files
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.coverage
+**/htmlcov/
+**/coverage.xml
+**/dist/
+**/build/
+**/*.egg-info/
+**/.venv/
+**/venv/
+**/.env
+**/.env.*
+!**/.env.example
+**/data/
+**/outputs/
+**/mlruns/
+**/logs/

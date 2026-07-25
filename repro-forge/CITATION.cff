@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "ReproForge: Automated Paper Reading & Reproduction for CS Research"
+authors:
+  - name: "ReproForge Contributors"
+url: "https://github.com/selfrestart/26Summer/tree/main/repro-forge"
+license: Apache-2.0
+version: 0.1.0
+date-released: 2025-07-24
+repository-code: "https://github.com/selfrestart/26Summer/tree/main/repro-forge"
+abstract: >
+  A multi-agent framework for automated computer science paper reading,
+  methodology analysis, and reproduction, featuring six specialized agents,
+  MCP protocol integration, a three-tier memory system, and a knowledge
+  graph engine.
+keywords:
+  - reproducibility
+  - paper-reading
+  - multi-agent
+  - large-language-models
+  - scientific-computing
+  - code-generation
+  - knowledge-graph
