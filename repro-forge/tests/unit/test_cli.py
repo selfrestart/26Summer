@@ -81,3 +81,27 @@ def test_provider_loads_deepseek_credentials_from_dotenv(
 
     assert captured["api_key"] == "dotenv-key"
     assert captured["model"] == "deepseek-chat"
+
+
+def test_provider_allows_a_keyless_openai_compatible_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, str | None] = {}
+
+    def fake_provider(**kwargs: str | None) -> object:
+        captured.update(kwargs)
+        return object()
+
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://localhost:11434/v1")
+    monkeypatch.setenv("OPENAI_MODEL", "llama3")
+    monkeypatch.setattr(providers, "OpenAIProvider", fake_provider)
+
+    cli._provider()
+
+    assert captured == {
+        "api_key": None,
+        "base_url": "http://localhost:11434/v1",
+        "model": "llama3",
+    }

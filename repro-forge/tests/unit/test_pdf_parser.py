@@ -49,3 +49,10 @@ def test_pdf_parser_tracks_section_page_ranges(tmp_path, monkeypatch) -> None:
     assert paper.sections[0].page_end == 1
     assert paper.sections[1].page_start == 2
     assert paper.sections[1].page_end == 2
+
+
+def test_pdf_parser_does_not_treat_a_sentence_as_a_section_heading() -> None:
+    parser = PDFParser()
+
+    assert parser._match_heading("Results show consistent improvements on every dataset.") is None
+    assert parser._match_heading("Results") == SectionType.RESULTS

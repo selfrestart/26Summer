@@ -7,10 +7,10 @@ No API keys or PDF files required.
 Usage:
     uv run python examples/read_paper.py
 
-To use with a real PDF and LLM:
+To use a real PDF and LLM through the P1 CLI:
     1. Install optional deps: uv sync --extra pdf --extra openai --group dev
     2. Set OPENAI_API_KEY or DEEPSEEK_API_KEY in .env
-    3. Run: uv run python examples/read_paper.py --pdf path/to/paper.pdf
+    3. Run: uv run repro-forge read-pdf path/to/paper.pdf --output note.json
 """
 
 from __future__ import annotations
@@ -165,7 +165,7 @@ FAKE_RESPONSES = [
 
 async def main() -> None:
     print("=" * 60)
-    print("  ReproForge — PaperReader Demo")
+    print("  ReproForge - PaperReader Demo")
     print("=" * 60)
     print()
 

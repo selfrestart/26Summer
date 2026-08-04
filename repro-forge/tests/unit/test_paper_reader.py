@@ -652,3 +652,36 @@ class TestPaperReader:
         assert "step budget" in str(tool_messages[-1]["content"]).lower()
         assert reader.trace.step_count == 1
         assert "attention" in note.tldr.lower()
+
+    @pytest.mark.asyncio
+    async def test_search_result_uses_the_matching_section_title(self) -> None:
+        reader = _setup_reader(FakeLLMProvider(), _make_test_paper())
+        await reader.setup()
+
+        observation = await reader.observe(
+            Action(
+                id="call_search_metric",
+                tool_name="search_paper",
+                tool_input={"query": "94.5%"},
+            )
+        )
+
+        assert "[Experiments]" in observation.content
+        assert "[Abstract]" not in observation.content
+
+    @pytest.mark.asyncio
+    async def test_unknown_section_returns_a_matching_tool_error(self) -> None:
+        reader = _setup_reader(FakeLLMProvider(), _make_test_paper())
+        await reader.setup()
+
+        observation = await reader.observe(
+            Action(
+                id="call_missing_section",
+                tool_name="read_section",
+                tool_input={"section_title": "Limitations"},
+            )
+        )
+
+        assert observation.is_error
+        assert "not found" in (observation.error or "").lower()
+        assert reader._conversation[-1]["tool_call_id"] == "call_missing_section"

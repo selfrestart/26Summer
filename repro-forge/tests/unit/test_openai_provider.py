@@ -225,3 +225,38 @@ async def test_generate_uses_empty_arguments_for_invalid_tool_json(
     result = await provider.generate(LLMRequest(messages=[], model="gpt-test"))
 
     assert result.tool_calls[0].arguments == {}
+
+
+@pytest.mark.asyncio
+async def test_generate_stream_forwards_stop_sequences(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeStream:
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            raise StopAsyncIteration
+
+    class CapturingCompletions:
+        async def create(self, **kwargs: object) -> FakeStream:
+            captured.update(kwargs)
+            return FakeStream()
+
+    client = SimpleNamespace(chat=SimpleNamespace(completions=CapturingCompletions()))
+    module = ModuleType("openai")
+    module.AsyncOpenAI = lambda **kwargs: client  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "openai", module)
+    provider = OpenAIProvider(api_key="test-key", model="gpt-test")
+    request = LLMRequest(
+        messages=[{"role": "user", "content": "test"}],
+        model="gpt-test",
+        stop_sequences=["STOP"],
+    )
+
+    chunks = [chunk async for chunk in provider.generate_stream(request)]
+
+    assert chunks == []
+    assert captured["stop"] == ["STOP"]

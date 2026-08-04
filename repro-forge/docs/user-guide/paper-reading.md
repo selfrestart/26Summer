@@ -19,7 +19,9 @@ note = await pipeline.read_pdf("papers/attention.pdf")
 print(note.model_dump_json(indent=2))
 ```
 
-For offline demos use `examples/read_paper.py`. Real LLM calls require the
-`openai` extra and `OPENAI_API_KEY`; PDF and arXiv sources have independent
-optional extras. P2 methodologist/algorithm extraction is intentionally not
-included in this workflow.
+For offline demos use `examples/read_paper.py`. Remote LLM calls require the
+`openai` extra and either `OPENAI_API_KEY` or `DEEPSEEK_API_KEY`; keyless local
+OpenAI-compatible endpoints can instead set `OPENAI_BASE_URL` and
+`OPENAI_MODEL`. PDF and arXiv sources have independent optional extras. P2
+methodologist/algorithm extraction is intentionally not included in this
+workflow.

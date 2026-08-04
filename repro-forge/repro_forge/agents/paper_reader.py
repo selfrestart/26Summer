@@ -315,7 +315,7 @@ class PaperReader(BaseAgent):
                 )
             try:
                 content = self._find_section_content(section_title, chunk_index)
-            except IndexError as exc:
+            except LookupError as exc:
                 return self._tool_error_observation(action, str(exc))
             self._read_sections.append(section_title)
             self._conversation.append(
@@ -534,16 +534,23 @@ class PaperReader(BaseAgent):
         available = (
             self._paper.section_titles if self._paper else [c.section_title for c in self._chunks]
         )
-        return f"Section '{title}' not found. Available: " + ", ".join(available)
+        raise LookupError(f"Section '{title}' not found. Available: " + ", ".join(available))
 
     def _search_paper_content(self, query: str) -> str:
-        """Search all chunks for a keyword."""
+        """Search paper sections for a keyword and retain source attribution."""
         query_lower = query.lower()
         results: list[str] = []
-        for chunk in self._chunks:
-            if query_lower in chunk.text.lower():
-                snippet = self._snippet(chunk.text, query, 200)
-                results.append(f"[{chunk.section_title}] {snippet}")
+        if self._paper:
+            for section in self._paper.sections:
+                searchable = f"{section.title}\n{section.content}"
+                if query_lower in searchable.lower():
+                    snippet = self._snippet(searchable, query, 200)
+                    results.append(f"[{section.title}] {snippet}")
+        else:
+            for chunk in self._chunks:
+                if query_lower in chunk.text.lower():
+                    snippet = self._snippet(chunk.text, query, 200)
+                    results.append(f"[{chunk.section_title}] {snippet}")
         if not results:
             return f"No matches for '{query}'"
         return "\n".join(results[:5])

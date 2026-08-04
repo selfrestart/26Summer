@@ -131,6 +131,7 @@ class OpenAIProvider(BaseProvider):
             max_tokens=request.max_tokens,
             tools=request.tools,
             tool_choice=request.tool_choice,
+            stop=request.stop_sequences,
             stream=True,
         )
         async for chunk in stream:

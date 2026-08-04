@@ -48,6 +48,14 @@ them with `DEEPSEEK_BASE_URL` and `DEEPSEEK_MODEL` when needed. It loads these
 values from `.env` in the current working directory without overriding variables
 that are already present in the process environment.
 
+Keyless local OpenAI-compatible servers are also supported. For example:
+
+```powershell
+$env:OPENAI_BASE_URL = "http://localhost:11434/v1"
+$env:OPENAI_MODEL = "llama3"
+uv run repro-forge read-pdf paper.pdf --output note.json
+```
+
 ## arXiv source
 
 The Python API exposes `search_arxiv`, `fetch_arxiv`, `download_arxiv`, and

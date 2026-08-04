@@ -45,16 +45,15 @@ class PaperChunker:
 
         buffer_text: list[str] = []
         buffer_title = ""
-        if not paper.sections:
+        sections_to_process = [section for section in paper.sections if section.content.strip()]
+        if not sections_to_process:
             return []
 
-        buffer_type = paper.sections[0].section_type
+        buffer_type = sections_to_process[0].section_type
         buffer_tokens = 0
 
-        sections_to_process = list(paper.sections)
-
         for section in sections_to_process:
-            sec_tokens = section.token_count or len(section.content) // 4
+            sec_tokens = max(section.token_count, self._estimate_tokens(section.content))
 
             # Small section — merge into buffer
             if buffer_tokens + sec_tokens <= self.max_tokens:
@@ -122,7 +121,9 @@ class PaperChunker:
         chunk_index = start_index
 
         for para in paragraphs:
-            para_tokens = len(para) // 4
+            if not para.strip():
+                continue
+            para_tokens = self._estimate_tokens(para)
 
             if para_tokens > self.max_tokens:
                 # Single huge paragraph — force-split by fixed character count
@@ -191,6 +192,13 @@ class PaperChunker:
             )
 
         return chunks
+
+    @staticmethod
+    def _estimate_tokens(text: str) -> int:
+        """Return a positive, conservative estimate for non-empty text."""
+        if not text:
+            return 0
+        return max(1, (len(text) + 3) // 4)
 
     def _make_chunk(
         self,

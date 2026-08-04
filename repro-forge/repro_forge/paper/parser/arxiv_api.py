@@ -13,6 +13,19 @@ from urllib.parse import urlparse
 from repro_forge.paper.schemas import PaperMetadata
 
 
+def normalize_arxiv_id(raw_id: str) -> str:
+    """Normalize modern or legacy arXiv references to an API identifier."""
+    value = raw_id.strip().removeprefix("arXiv:").removeprefix("arxiv:")
+    if "://" in value:
+        path_parts = [part for part in urlparse(value).path.split("/") if part]
+        if path_parts and path_parts[0].lower() in {"abs", "pdf"}:
+            path_parts = path_parts[1:]
+        value = "/".join(path_parts)
+    if value.lower().endswith(".pdf"):
+        value = value[:-4]
+    return value.strip().strip("/")
+
+
 class ArxivClient:
     """Client for interacting with the arXiv API.
 
@@ -100,8 +113,9 @@ class ArxivClient:
 
         out_dir = Path(output_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
-        target = out_dir / f"{clean_id}.pdf"
-        result.download_pdf(dirpath=str(out_dir), filename=f"{clean_id}.pdf")
+        safe_filename = clean_id.replace("/", "_").replace("\\", "_") + ".pdf"
+        target = out_dir / safe_filename
+        result.download_pdf(dirpath=str(out_dir), filename=safe_filename)
         return target
 
     def _result_to_metadata(self, result: Any) -> PaperMetadata:
@@ -120,10 +134,4 @@ class ArxivClient:
     @staticmethod
     def _clean_id(raw_id: str) -> str:
         """Normalize an arXiv ID to the canonical form (e.g. ``1706.03762``)."""
-        value = raw_id.strip()
-        if "://" in value:
-            value = urlparse(value).path.rstrip("/").split("/")[-1]
-        value = value.removeprefix("arXiv:").removeprefix("arxiv:")
-        if value.lower().endswith(".pdf"):
-            value = value[:-4]
-        return value.strip()
+        return normalize_arxiv_id(raw_id)

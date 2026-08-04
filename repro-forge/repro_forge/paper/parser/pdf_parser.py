@@ -177,6 +177,8 @@ class PDFParser:
         stripped = line.strip()
         if len(stripped) > 60:
             return None
+        if stripped.endswith((".", "?", "!", ";")):
+            return None
         for pattern, stype in self._patterns:
             if pattern.match(stripped):
                 return stype

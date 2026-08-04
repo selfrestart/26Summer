@@ -103,14 +103,25 @@ def test_pipeline_delegates_arxiv_operations() -> None:
     assert pipeline.download_arxiv("1234.5678", "downloads") == Path("downloads/1234.5678.pdf")
 
 
-def test_pipeline_normalizes_arxiv_url_before_delegation() -> None:
+@pytest.mark.parametrize(
+    ("raw_id", "expected"),
+    [
+        ("https://arxiv.org/abs/1706.03762v2", "1706.03762v2"),
+        ("https://arxiv.org/pdf/1706.03762.pdf", "1706.03762"),
+        ("https://arxiv.org/abs/hep-th/9901001v3", "hep-th/9901001v3"),
+    ],
+)
+def test_pipeline_normalizes_arxiv_url_before_delegation(
+    raw_id: str,
+    expected: str,
+) -> None:
     class FakeArxiv:
         def fetch_by_id(self, arxiv_id: str) -> PaperMetadata:
             return PaperMetadata(arxiv_id=arxiv_id)
 
     pipeline = PaperPipeline(arxiv_client=FakeArxiv())
 
-    assert pipeline.fetch_arxiv("https://arxiv.org/abs/1706.03762v2").arxiv_id == "1706.03762v2"
+    assert pipeline.fetch_arxiv(raw_id).arxiv_id == expected
 
 
 @pytest.mark.asyncio

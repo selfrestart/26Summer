@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Protocol
-from urllib.parse import urlparse
 
 from repro_forge.agents.paper_reader import PaperReader
+from repro_forge.paper.parser.arxiv_api import normalize_arxiv_id
 from repro_forge.paper.parser.pdf_parser import PDFParser
 from repro_forge.paper.schemas import Paper
 from repro_forge.paper.schemas import PaperMetadata
@@ -104,7 +104,4 @@ class PaperPipeline:
     @staticmethod
     def _normalize_arxiv_id(value: str) -> str:
         """Normalize an arXiv URL or prefixed identifier."""
-        cleaned = value.strip()
-        if "://" in cleaned:
-            cleaned = urlparse(cleaned).path.rstrip("/").split("/")[-1]
-        return cleaned.removeprefix("arXiv:").removeprefix("arxiv:")
+        return normalize_arxiv_id(value)

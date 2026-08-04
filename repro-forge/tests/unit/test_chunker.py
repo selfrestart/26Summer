@@ -86,6 +86,28 @@ class TestPaperChunker:
         chunks = chunker.chunk(paper)
         assert chunks[0].token_count > 0
 
+    def test_underreported_section_tokens_do_not_bypass_chunk_limit(self) -> None:
+        section = Section(title="Long", content="x" * 20000, token_count=1)
+
+        chunks = PaperChunker(max_tokens=1000).chunk(Paper(sections=[section]))
+
+        assert len(chunks) > 1
+        assert all(0 < chunk.token_count <= 1000 for chunk in chunks)
+
+    def test_non_empty_tiny_section_has_positive_token_count(self) -> None:
+        section = Section(title="Tiny", content="x", token_count=0)
+
+        chunks = PaperChunker(max_tokens=1000).chunk(Paper(sections=[section]))
+
+        assert chunks[0].token_count == 1
+
+    def test_whitespace_only_sections_are_ignored(self) -> None:
+        section = Section(title="Empty", content=" \n\t", token_count=10)
+
+        chunks = PaperChunker().chunk(Paper(sections=[section]))
+
+        assert chunks == []
+
     def test_empty_paper(self) -> None:
         paper = Paper(sections=[])
         chunker = PaperChunker()

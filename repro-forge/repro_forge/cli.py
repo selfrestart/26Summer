@@ -7,7 +7,9 @@ import asyncio
 import json
 import os
 from collections.abc import Sequence
+from ipaddress import ip_address
 from pathlib import Path
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
@@ -48,12 +50,27 @@ def _capabilities(_args: argparse.Namespace) -> int:
     return 0
 
 
+def _is_local_endpoint(base_url: str) -> bool:
+    """Return whether a compatible endpoint is local enough to run without a key."""
+    hostname = urlparse(base_url).hostname
+    if not hostname:
+        return False
+    if hostname == "localhost" or hostname.endswith(".localhost"):
+        return True
+    try:
+        address = ip_address(hostname)
+    except ValueError:
+        return "." not in hostname
+    return address.is_private or address.is_loopback
+
+
 def _provider() -> BaseProvider:
     from repro_forge.providers import OpenAIProvider
 
     load_dotenv(Path.cwd() / ".env", override=False)
     openai_api_key = os.getenv("OPENAI_API_KEY")
     deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
+    api_key: str | None
     if openai_api_key:
         api_key = openai_api_key
         base_url = os.getenv("OPENAI_BASE_URL")
@@ -63,7 +80,13 @@ def _provider() -> BaseProvider:
         base_url = os.getenv("DEEPSEEK_BASE_URL") or "https://api.deepseek.com"
         model = os.getenv("DEEPSEEK_MODEL") or "deepseek-chat"
     else:
-        raise SystemExit("OPENAI_API_KEY or DEEPSEEK_API_KEY is required for LLM-backed reading")
+        base_url = os.getenv("OPENAI_BASE_URL") or os.getenv("DEEPSEEK_BASE_URL")
+        if not base_url or not _is_local_endpoint(base_url):
+            raise SystemExit(
+                "OPENAI_API_KEY or DEEPSEEK_API_KEY is required for remote LLM-backed reading"
+            )
+        api_key = None
+        model = os.getenv("OPENAI_MODEL") or os.getenv("DEEPSEEK_MODEL") or "gpt-4o"
     return OpenAIProvider(
         api_key=api_key,
         base_url=base_url,
