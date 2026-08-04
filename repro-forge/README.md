@@ -30,9 +30,9 @@ ReproForge aims to become a multi-agent framework for reading, understanding, an
 
 ## Key Features
 
-> **Roadmap, not current functionality:** the table below describes the target
-> product. P0 currently provides only the typed core models, abstract Agent
-> runtime, Provider interface, tests, packaging, and engineering automation.
+> **Capability boundary:** the table below includes roadmap targets. P0 and P1
+> are implemented; P1 covers local PDF/arXiv ingestion, token-aware chunking,
+> the PaperReader agent, provider injection, and the `PaperPipeline`/CLI.
 
 | Category | Feature |
 |----------|---------|
@@ -50,12 +50,12 @@ ReproForge aims to become a multi-agent framework for reading, understanding, an
 
 ---
 
-## P0 Quick Start
+## P1 Quick Start
 
 ### Prerequisites
 
 - [uv](https://docs.astral.sh/uv/) — fast Python package manager (auto-manages Python 3.11+ via `.python-version`)
-- No API key is required for the current P0 core and test suite
+- No API key is required for the deterministic examples and test suite
 
 ### Installation
 
@@ -65,52 +65,47 @@ git clone https://github.com/selfrestart/26Summer.git
 cd 26Summer/repro-forge
 uv sync --locked --group dev
 
-# Verify the installed package and engineering baseline
-uv run repro-forge
+# Verify the installed package and P1 capabilities
+uv run repro-forge --version
+uv run repro-forge capabilities
 uv run pytest
 uv run ruff check repro_forge tests
 uv run mypy repro_forge
 ```
 
-### Future Environment Setup
+### Optional P1 Integrations
 
-The provider variables in `.env.example` are reserved for later phases and are
-not consumed by P0.
+Install only the integrations you need:
 
 ```bash
-cp .env.example .env
-# Edit .env with your API keys
+uv sync --locked --extra pdf --group dev       # local PDF parsing
+uv sync --locked --extra arxiv --group dev     # arXiv search/download
+uv sync --locked --extra openai --group dev    # OpenAI-compatible LLM
+
+# For real LLM-backed reading, set OPENAI_API_KEY or DEEPSEEK_API_KEY in .env
 ```
 
 ### 5-Minute Quickstart
 
-> **Planned API:** the following example documents the intended P1/P2 API. The
-> imported classes do not exist in P0 and this code is not currently runnable.
+### Read a paper with P1
 
 ```python
+from dotenv import load_dotenv
+
 from repro_forge.paper import PaperPipeline
-from repro_forge.agents import PaperReader, Methodologist
 from repro_forge.providers import OpenAIProvider
 
+load_dotenv()
+
 # 1. Parse a paper and get structured insights
-pipeline = PaperPipeline()
-paper = await pipeline.parse("path/to/paper.pdf")
-
-# 2. Get a multi-level reading note
-reader = PaperReader(provider=OpenAIProvider())
-notes = await reader.read(paper)
-print(notes.tldr)       # 3-sentence summary
-print(notes.mehodology) # Detailed method analysis
-
-# 3. Extract algorithms and architecture
-methodologist = Methodologist(provider=OpenAIProvider())
-insights = await methodologist.analyze(paper)
-for algo in insights.algorithms:
-    print(f"Algorithm: {algo.name}")
-    print(f"Input: {algo.input}")
-    print(f"Steps: {algo.pseudocode}")
-    print(f"Output: {algo.output}")
+pipeline = PaperPipeline(provider=OpenAIProvider())
+note = await pipeline.read_pdf("path/to/paper.pdf")
+print(note.tldr)
+print(note.summary())
 ```
+
+For an offline run, use `uv run python examples/read_paper.py`, which uses a
+deterministic provider and does not require a PDF or API key.
 
 ### Run a Full Reproduction
 
@@ -185,7 +180,7 @@ Full documentation is available in the repository's [docs directory](https://git
 | Phase | Status | Content |
 |-------|--------|---------|
 | P0 | ✅ Complete | Core abstractions, tests, packaging, CI, docs build, Docker package image |
-| P1 | 📋 Planned | Core runtime, PaperReader agent, PDF pipeline |
+| P1 | ✅ Complete | PaperReader, PDF/arXiv parsers, chunker, provider boundary, pipeline, CLI |
 | P2 | 📋 Planned | Methodologist, algorithm extraction, KG writes |
 | P3 | 📋 Planned | CodeForger, Docker sandbox execution |
 | P4 | 📋 Planned | MathChecker, Verifier, reproduction reports |

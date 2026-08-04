@@ -144,6 +144,20 @@ no_implicit_optional = true
 show_error_codes = true
 plugins = ["pydantic.mypy"]
 
+[[tool.mypy.overrides]]
+module = [
+    "openai",
+    "openai.*",
+    "fitz",
+    "arxiv",
+    "chromadb",
+    "neo4j",
+    "mlflow",
+    "docker",
+    "opentelemetry.*",
+]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
@@ -169,7 +183,7 @@ source = ["repro_forge"]
 omit = ["*/tests/*", "*/test_*.py"]
 
 [tool.coverage.report]
-fail_under = 60
+fail_under = 65
 exclude_also = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",

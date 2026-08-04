@@ -1,3 +1,25 @@
-﻿# paper-reading
+# Paper Reading
 
-Coming soon.
+The P1 paper workflow has four stages:
+
+1. `PDFParser` converts a local PDF into `PaperMetadata`, page-aware
+   `Section` objects, raw text, and token estimates.
+2. `PaperChunker` keeps sections together where possible and splits oversized
+   paragraphs at whitespace boundaries under a token budget.
+3. `PaperReader` uses the P0 ReAct runtime and an injected `BaseProvider` to
+   inspect sections and produce a `PaperNote`.
+4. `PaperPipeline` composes those stages and also exposes arXiv metadata and
+   download helpers.
+
+```python
+from repro_forge.paper import PaperPipeline
+
+pipeline = PaperPipeline(provider=my_provider)
+note = await pipeline.read_pdf("papers/attention.pdf")
+print(note.model_dump_json(indent=2))
+```
+
+For offline demos use `examples/read_paper.py`. Real LLM calls require the
+`openai` extra and `OPENAI_API_KEY`; PDF and arXiv sources have independent
+optional extras. P2 methodologist/algorithm extraction is intentionally not
+included in this workflow.

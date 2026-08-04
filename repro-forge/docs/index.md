@@ -4,12 +4,12 @@ Welcome to the ReproForge documentation! ReproForge is a multi-agent framework
 for automated computer science paper reading, methodology analysis, and
 reproduction.
 
-!!! warning "P0 project status"
+!!! note "Current project status"
 
-    ReproForge is currently an engineering baseline, not an end-to-end paper
-    reproduction product. P0 implements the typed core models, abstract Agent
-    loop, Provider interface, packaging, tests, and automation. The workflows
-    described below are roadmap targets for later phases.
+    P0 and P1 are implemented. P1 provides PDF/arXiv paper ingestion,
+    token-aware chunking, the PaperReader agent, provider injection, and a
+    `PaperPipeline`/CLI surface. Method extraction, reproduction execution,
+    knowledge graph, API, and frontend remain roadmap work.
 
 ## What is ReproForge?
 
@@ -135,7 +135,7 @@ Built-in benchmarks measure agent performance:
 | Phase | Status |
 |-------|--------|
 | P0 (Core and infrastructure) | ✅ Complete |
-| P1 (PaperReader) | 📋 Planned |
+| P1 (PaperReader) | ✅ Complete |
 | P2 (Methodologist) | 📋 Planned |
 | P3 (CodeForger + Execution) | 📋 Planned |
 | P4 (Verifier) | 📋 Planned |

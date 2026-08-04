@@ -354,7 +354,7 @@ repro-forge = "repro_forge.cli:main"
 
 **`[tool.coverage.run]` / `[tool.coverage.report]`**
 - `source = ["repro_forge"]`：只统计 repro_forge 包的覆盖率
-- `fail_under = 60`：P0 阶段目标 60%，后续逐步提升
+- `fail_under = 80`：覆盖率低于 80% 时 CI 失败
 
 **`[tool.bumpver]`**
 ```toml
@@ -514,12 +514,12 @@ class BaseProvider(ABC):
 
 **LLMResponse 字段**：`content`, `model`, `finish_reason`, `usage`, `raw`
 
-### 5.5-5.14 模块概览（P1-P8 待实现）
+### 5.5-5.14 模块概览（P1 已实现，P2-P8 待实现）
 
 | 模块 | P0 状态 | P1-P8 规划 |
 |------|---------|-----------|
-| `agents/` | 空包（`__init__.py`） | P1-P4：6 个 Agent 实现 |
-| `paper/` | 空包 | P1：PDF 解析管道 |
+| `agents/` | P1：`PaperReader` | P2-P4：其余专项 Agent |
+| `paper/` | P1：PDF/arXiv 解析、分块、`PaperPipeline` | P2：方法抽取与更丰富的论文服务 |
 | `reproduction/` | 空包 | P3-P4：复现引擎 |
 | `memory/` | 空包 | P4：三阶记忆系统 |
 | `knowledge/` | 空包 | P5：知识图谱 |

@@ -1,16 +1,23 @@
-# P0 Configuration
+# P1 Configuration
 
-P0 configuration is contained in `pyproject.toml` and does not require runtime
-environment variables.
+Core configuration is contained in `pyproject.toml`; P1 integrations are
+optional and activate only when their extra is installed.
 
-| Configuration | P0 behavior |
+| Configuration | P1 behavior |
 |---|---|
 | Python | 3.11-3.13 supported; `.python-version` selects 3.13 locally |
 | Dependencies | `uv.lock` is authoritative for development and CI |
+| PDF | Install `uv sync --extra pdf`; uses PyMuPDF lazily |
+| arXiv | Install `uv sync --extra arxiv`; client supports search/fetch/download |
+| LLM | Install `uv sync --extra openai`; use an OpenAI-compatible endpoint |
+| Model | `OPENAI_MODEL` (default `gpt-4o`) or `DEEPSEEK_MODEL` (default `deepseek-chat`) |
+| Endpoint | `OPENAI_BASE_URL` or `DEEPSEEK_BASE_URL` (default `https://api.deepseek.com`) |
+| Credentials | `OPENAI_API_KEY` or `DEEPSEEK_API_KEY`, required only for real LLM calls |
 | Formatting and lint | Ruff, targeting the minimum supported Python 3.11 |
 | Type checking | mypy strict mode |
-| Tests | pytest with branch coverage and a 60% minimum |
-| Documentation | MkDocs Material, built with strict validation |
+| Tests | pytest with branch coverage and a 65% minimum |
+| Documentation | MkDocs Material |
 
-`.env.example` reserves provider, storage, execution, and observability settings
-for later phases. None of those variables are consumed by the P0 package.
+The deterministic examples and tests inject a fake provider and need no API
+key. P2+ storage, execution, observability, API, and knowledge-graph settings
+remain reserved for later phases.

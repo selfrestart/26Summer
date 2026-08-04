@@ -15,6 +15,15 @@ from typing import Literal
 
 
 @dataclass
+class LLMToolCall:
+    """Provider-neutral representation of a native LLM tool call."""
+
+    call_id: str
+    name: str
+    arguments: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
 class LLMResponse:
     """Unified response from any LLM provider."""
 
@@ -23,6 +32,7 @@ class LLMResponse:
     finish_reason: str = "stop"
     usage: dict[str, int] = field(default_factory=dict)
     raw: Any = None
+    tool_calls: list[LLMToolCall] = field(default_factory=list)
 
 
 @dataclass

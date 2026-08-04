@@ -8,7 +8,9 @@
 
 ## 概述
 
-P0 阶段的目标是建立 Python 项目的工程基础设施和最小核心抽象。在这一阶段不实现论文解析、专项 Agent、真实 LLM Provider、API 或复现流水线，只提供类型系统、抽象运行时以及支撑后续开发的质量门禁。
+P0 阶段建立了 Python 项目的工程基础设施和最小核心抽象。P1 在此基础
+上实现了论文解析、PaperReader、可选真实 Provider 和阅读流水线；API、
+知识图谱和复现流水线仍属于后续阶段。
 
 这相当于一座大厦的地基 —— 所有后续的 Agent 代码、论文管道、复现引擎都建立在它之上。
 
@@ -110,7 +112,7 @@ repro_forge/
 ├── providers/
 │   └── base.py       # 多 LLM Provider 抽象
 ├── agents/           # (P1-P4 待实现) 六大专项 Agent
-├── paper/            # (P1 待实现) 论文解析管道
+├── paper/            # (P1 已实现) PDF/arXiv 解析、分块、阅读流水线
 ├── reproduction/     # (P3-P4 待实现) 复现引擎
 ├── memory/           # (P4 待实现) 记忆系统
 ├── knowledge/        # (P5 待实现) 知识图谱
@@ -172,8 +174,8 @@ P0 阶段确立的工程原则将贯穿整个项目：
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | P0 | 基础设施搭建 | ✅ 已完成 |
-| **P1** | PaperReader Agent + PDF 解析管道 | 📋 待开始 |
+| **P1** | PaperReader Agent + PDF/arXiv 解析管道 | ✅ 已完成 |
 | P2 | Methodologist + 知识图谱写入 | 📋 规划中 |
 | P3 | CodeForger + 实验执行 | 📋 规划中 |
 
-P1 及后续阶段保持规划状态，不属于本轮 P0 交付。
+P2 及后续阶段保持规划状态，不属于当前 P1 交付。
