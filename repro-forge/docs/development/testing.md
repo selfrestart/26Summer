@@ -1,6 +1,7 @@
 ﻿# 测试策略
 
-本文档描述 ReproForge 的测试策略、工具和最佳实践。
+本文档描述 ReproForge 的测试策略、工具和最佳实践。当前已实现的测试重点是
+P0 核心运行时和 P1 论文阅读链路；P2+ 测试示例只是未来约定。
 
 ---
 
@@ -41,14 +42,17 @@ ReproForge 采用 **测试金字塔** 模型：
 ## 运行测试
 
 ```bash
-# 单元测试（最快，推荐开发时常用）
-make test
+# 全量测试（Windows/Linux 通用）
+uv run pytest -q
 
 # 带覆盖率报告
-make test-cov
+uv run pytest -q
 
 # 端到端测试（需要服务运行）
-make test-e2e
+# 质量检查
+uv run ruff check repro_forge tests
+uv run ruff format --check repro_forge tests
+uv run mypy repro_forge
 
 # 跳过 LLM 标记的测试
 uv run pytest -m "not llm"
@@ -100,41 +104,91 @@ assert len(agent.trace.steps) == 3
 
 | 阶段 | 单元 | 集成 | E2E |
 |------|------|------|-----|
-| P0（核心与基础设施） | ≥ 60%（当前仅覆盖已实现核心） | - | - |
-| P1（PaperReader） | ≥ 90% | ≥ 70% | ≥ 50% |
+| P0（核心与基础设施） | 已覆盖 | - | - |
+| P1（PaperReader + paper pipeline） | 86.06% 总体基线 | 集成测试已覆盖主要链路 | 外部 smoke test 按需运行 |
 | P2-P8 | ≥ 90% | ≥ 70% | ≥ 50% |
 
 ---
 
-## 示例：给新 Agent 写测试
+## P1 测试映射
+
+| 测试文件 | 关注点 |
+|---|---|
+| `test_pdf_parser.py` | 文件、元数据、标题检测、页码和可选依赖 |
+| `test_arxiv_api.py` | ID 归一化、搜索、下载和安全文件名 |
+| `test_chunker.py` | 合并、长段落、token 预算和空输入 |
+| `test_paper_reader.py` | 工具参数错误、native calls、预算耗尽、trace 和 JSON |
+| `test_pipeline.py` | 注入、解析/阅读组合和 arXiv 委托 |
+| `test_openai_provider.py` | 配置优先级、响应适配和流式停止序列 |
+| `test_cli.py` | 版本、能力、dotenv、keyless endpoint 和输出文件 |
+| `test_read_pipeline.py` | PaperChunker + PaperReader 集成链路 |
+
+当前验证基线：`uv run pytest -q` 为 107 passed，覆盖率 86.06%。真实 DeepSeek
+和 arXiv smoke test 需要网络、凭据或外部服务，不属于默认测试套件。
+
+## 失败排查顺序
+
+```text
+pytest 收集失败
+  → 检查 uv sync --locked --group dev 和当前解释器
+测试 import 失败
+  → 检查 optional extra，而不是直接修改测试
+PaperReader 测试失败
+  → 先使用 FakeLLMProvider 检查 request/response 和 trace
+PDF 测试失败
+  → 区分 fitz 缺失、文件无效、抽取文本为空三种情况
+真实 Provider 失败
+  → 最后再检查 key、base URL、model、网络和额度
+```
+
+不要在单元测试中临时接入真实 API；这会让测试变慢、产生费用并引入非确定性。
+
+## 测试与实现的对应关系
+
+每个 P1 变更至少应回答一个对应测试问题：
+
+| 变更 | 应补充/更新的测试 |
+|---|---|
+| 新增 schema 字段 | `test_schemas.py` + JSON round-trip |
+| 修改章节识别 | `test_pdf_parser.py` 的正例和误识别反例 |
+| 修改 chunk 算法 | `test_chunker.py` 的预算、索引、长段落用例 |
+| 修改 tool 参数 | `test_paper_reader.py` 的成功和错误 observation |
+| 修改 provider 优先级 | `test_openai_provider.py` 的环境隔离 fixture |
+| 修改 CLI 配置 | `test_cli.py` 的 dotenv、keyless、公网拒绝用例 |
+| 修改 pipeline 注入 | `test_pipeline.py` 的 fake dependency 断言 |
+
+## 示例：给 P1 PaperReader 写测试
 
 ```python
-"""Tests for Methodologist agent."""
+"""A minimal deterministic PaperReader test."""
 
 import pytest
-from repro_forge.agents.methodologist import Methodologist
-from repro_forge.core.types import AgentConfig, AgentType, TaskSpec
+from repro_forge.agents.paper_reader import PaperReader
+from repro_forge.core.types import AgentConfig, AgentType
+from repro_forge.paper import Paper, Section, SectionType
 from tests.conftest import FakeLLMProvider
 
 
 @pytest.fixture
-def methodologist(fake_provider: FakeLLMProvider) -> Methodologist:
-    config = AgentConfig(agent_type=AgentType.METHODOLOGIST)
-    return Methodologist(config=config, provider=fake_provider)
+def reader(fake_provider: FakeLLMProvider) -> PaperReader:
+    config = AgentConfig(agent_type=AgentType.PAPER_READER, max_steps=3)
+    return PaperReader(config=config, provider=fake_provider)
 
 
-class TestMethodologist:
+class TestPaperReader:
     @pytest.mark.asyncio
-    async def test_extracts_algorithms(
-        self, methodologist: Methodologist, sample_task: TaskSpec
-    ) -> None:
-        methodologist.provider.set_responses([
-            "I found 3 algorithms: Attention, MLP, LayerNorm",
-            '{"algorithms": [{"name": "Attention", "steps": "..."}]}',
+    async def test_reads_a_paper_without_network(self, reader: PaperReader) -> None:
+        reader.provider.set_responses([
+            "Let me list the sections.",
+            'DONE\n{"tldr": "A deterministic paper note.", "contributions": [], '
+            '"methodology_summary": "", "key_findings": [], "strengths": [], '
+            '"weaknesses": [], "questions": []}',
         ])
+        paper = Paper(sections=[Section(title="Abstract", content="A short abstract.",
+                                        section_type=SectionType.ABSTRACT)])
 
-        result = await methodologist.run(sample_task)
+        note = await reader.read(paper)
 
-        assert result.status == "success"
-        assert len(result.output["algorithms"]) == 3
+        assert note.tldr == "A deterministic paper note."
+        assert note.total_tokens_used >= 0
 ```

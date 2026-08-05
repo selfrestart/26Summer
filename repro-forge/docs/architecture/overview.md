@@ -1,233 +1,156 @@
-﻿# 架构总览
+# 架构总览
 
-ReproForge 采用分层事件驱动架构，由 9 个核心子系统构成。
+本文把 **当前可运行的 P1 架构** 与 **P2+ 目标架构** 分开描述。判断功能是否完成，应以当前代码、测试和 P1 技术参考为准，而不是以空目录或路线图图示为准。
 
----
+## 当前状态
 
-## 系统架构图
+| 层级 | 已实现 | 尚未实现 |
+|---|---|---|
+| 用户入口 | Python API、`repro-forge` CLI | Web UI、REST/SSE API |
+| 领域能力 | PDF/arXiv、论文模型、分块、PaperReader、PaperNote | 方法抽取、代码生成、实验、核验 |
+| Agent | `PaperReader` | Methodologist、MathChecker、CodeForger、Experimentor、Verifier |
+| Provider | OpenAI-compatible，包括 DeepSeek 和本地 endpoint | 独立 Anthropic/本地 Provider 实现 |
+| 基础设施 | P0 core/types/trace、质量工具链 | Memory、知识图谱、MCP、Guardrails、Observability |
+
+## P1 运行架构
 
 ```mermaid
-graph TB
-    subgraph "用户界面层"
-        WEB[Web UI<br/>React + TypeScript]
-        CLI[CLI<br/>uv run repro-forge]
+flowchart TB
+    subgraph Input[输入层]
+        PDF[本地 PDF]
+        AX[arXiv ID / URL]
+        JSON[Paper JSON]
     end
 
-    subgraph "API 网关层"
-        API[FastAPI Server<br/>REST + SSE Streaming]
+    subgraph Domain[论文领域层]
+        AP[ArxivClient]
+        PP[PDFParser]
+        MODEL[PaperMetadata / Section / Paper]
+        CHUNK[PaperChunker]
     end
 
-    subgraph "Agent 运行时"
-        CORE[Agent Core<br/>ReAct & Plan-Execute Loops]
-        MA[Multi-Agent Orchestrator<br/>Team / Debate / Consensus]
+    subgraph Runtime[Agent 运行时]
+        PIPE[PaperPipeline]
+        READER[PaperReader]
+        CORE[BaseAgent ReAct Loop]
     end
 
-    subgraph "六大专项 Agent"
-        PR[PaperReader<br/>论文导读]
-        MT[Methodologist<br/>方法学分析]
-        MC[MathChecker<br/>数学校验]
-        CF[CodeForger<br/>代码生成]
-        EX[Experimentor<br/>实验执行]
-        VF[Verifier<br/>结果核验]
+    subgraph Provider[模型边界]
+        CONTRACT[BaseProvider + LLMRequest/Response]
+        OA[OpenAIProvider]
+        REMOTE[OpenAI / DeepSeek / compatible endpoint]
     end
 
-    subgraph "基础设施层"
-        MEM[Memory System<br/>Episodic / Semantic / Working]
-        KG[Knowledge Graph<br/>Neo4j]
-        TOOLS[Tool System<br/>MCP Protocol]
-        OBS[Observability<br/>OTel Tracing / Cost Tracking]
+    subgraph Output[输出]
+        NOTE[PaperNote]
+        TRACE[AgentTrace / token usage]
+        OUTJSON[JSON file / stdout]
     end
 
-    subgraph "安全层"
-        GRL[Guardrails<br/>Input / Output / Tool ACL]
-        AUD[Audit Log<br/>所有 Agent 操作记录]
-    end
-
-    subgraph "外部"
-        LLM[LLM Providers<br/>OpenAI / Anthropic / DeepSeek / Ollama]
-        EXT[External APIs<br/>arXiv / GitHub / PapersWithCode]
-        DOCKER[Docker Sandbox<br/>Code Execution]
-    end
-
-    WEB --> API
-    CLI --> API
-    API --> CORE
-    CORE --> MA
-    MA --> PR & MT & MC & CF & EX & VF
-    PR & MT & MC & CF & EX & VF --> LLM
-    TOOLS --> EXT & DOCKER
-    CORE --> MEM & KG & TOOLS
-    MA --> OBS
-    CORE --> GRL
-    GRL --> AUD
+    AX --> AP --> PDF
+    PDF --> PP --> MODEL
+    JSON --> MODEL
+    MODEL --> CHUNK --> READER
+    PIPE --> PP
+    PIPE --> AP
+    PIPE --> READER
+    READER --> CORE
+    READER --> CONTRACT --> OA --> REMOTE
+    READER --> NOTE
+    CORE --> TRACE
+    NOTE --> OUTJSON
 ```
 
----
+## 模块职责
 
-## 核心子系统
+### 1. P0 核心运行时 (`core/`)
 
-### 1. Agent 运行时 (`core/`)
+`BaseAgent` 负责 `setup → think → act → observe → finalize → teardown` 生命周期、状态迁移、步数上限和 `AgentTrace`。P1 没有复制 Agent 循环，而是让 PaperReader 实现论文领域的各个 hook。
 
-位于架构中心，实现 ReAct (Reason + Act) 循环和 Plan-Execute 循环。
+### 2. 论文领域层 (`paper/`)
 
-```
-┌─────────────────────────────────────────────────┐
-│                  BaseAgent                       │
-│  ┌──────────────────────────────────────────┐   │
-│  │          ReAct Loop                        │   │
-│  │                                           │   │
-│  │   think() ──► act() ──► observe()         │   │
-│  │      ▲                       │            │   │
-│  │      └─── should_stop? ──────┘            │   │
-│  │               │                           │   │
-│  │           finalize()                      │   │
-│  └──────────────────────────────────────────┘   │
-│                                                  │
-│  Stream 模式: yield TraceStep per iteration     │
-└─────────────────────────────────────────────────┘
-```
+- `schemas.py`：稳定的 `Paper`、`Section`、`PaperChunk`、`PaperNote` 数据契约；
+- `pdf_parser.py`：逐页提取文本、识别常见英文论文标题、记录页码；
+- `arxiv_api.py`：搜索、元数据、现代/旧式 ID 归一化和安全文件名下载；
+- `chunker.py`：在 token 预算内保留章节和段落边界；
+- `pipeline.py`：以依赖注入组合 parser、arXiv client、reader 和 provider。
 
-### 2. 多 Agent 编排 (`multi_agent/`)
+### 3. PaperReader (`agents/paper_reader.py`)
 
-| 模式 | 描述 | 适用场景 |
-|------|------|---------|
-| **Sequential** | Agent 按序执行 | 导读 → 方法分析 → 代码生成 |
-| **Handoff** | 任务转交 | PaperReader 发现需要 Methodologist 时移交 |
-| **Delegate** | 子任务委派 | Orchestrator 分配章节给多个 PaperReader |
-| **Debate** | 多轮辩论 | MathChecker + Verifier 就推导分歧进行讨论 |
-| **Broadcast** | 广播 | 通知所有 Agent 论文更新/引用变更 |
+PaperReader 使用三个本地只读工具：
 
-### 3. Memory 系统 (`memory/`)
+| 工具 | 作用 |
+|---|---|
+| `list_sections` | 获取论文结构 |
+| `read_section` | 按标题和章节内 chunk 编号读取 |
+| `search_paper` | 搜索全文并保留章节归因 |
 
-三阶记忆架构：
+模型通过 native tool calls 或兼容文本回退选择工具。达到步数预算后，reader 会关闭 pending tool calls 并执行一次无工具最终总结，输出经 Pydantic 校验的 `PaperNote`。
 
-| 层级 | 存储 | 容量 | 生命周期 | 检索方式 |
-|------|------|------|---------|---------|
-| **Working** | Agent 上下文窗口 | ~128K tokens | 单次会话 | 全量可用 |
-| **Episodic** | ChromaDB 向量库 | 数十万条 | 跨会话持久 | 向量相似度 |
-| **Semantic** | Neo4j 知识图谱 | 百万级节点 | 永久 | 图查询 |
+### 4. Provider 层 (`providers/`)
 
-### 4. Reproduction 管道 (`reproduction/`)
+`BaseProvider` 定义统一的异步请求、响应、工具调用和流式接口。`OpenAIProvider` 是 P1 唯一真实实现，可连接 OpenAI、DeepSeek、Qwen、vLLM、Ollama 等兼容 chat completions 的服务。不同模型的推理质量和协议细节仍属于外部差异。
 
-论文复现的核心数据流：
+### 5. CLI (`cli.py`)
 
-```
-Paper → Algorithm Extraction → Code Generation → Docker Execution → Verification → Report
-  │            │                     │                  │                 │            │
-  │      Methodologist          CodeForger        Experimentor       Verifier    Markdown/LaTeX
-  │            │                     │                  │                 │            │
-  │      提取: 算法、架构、         生成: model.py      执行: 训练/评估      对比: 指标偏差
-  │      损失、超参、数据            train.py            MLflow 记录        统计检验
-  └── PaperReader ────────────── SurveyScribe ─────────────────────────────────────────────┘
-                                          │
-                                      知识图谱驱动的综述生成
+CLI 暴露版本、能力清单、PDF 阅读和 Paper JSON 阅读。它从当前目录 `.env` 加载配置，远程 endpoint 要求 key，本地/私有 endpoint 可以 keyless 运行。
+
+## 依赖方向
+
+```text
+CLI / 用户代码
+    ↓
+PaperPipeline
+    ↓
+PaperReader ─────────→ BaseProvider
+    ↓                     ↓
+Paper / Chunk         OpenAIProvider
+    ↓
+PDFParser / ArxivClient
 ```
 
-### 5. MCP 协议层 (`mcp/`)
+编排依赖 `Protocol` 和抽象，而不是把具体 client 写死，因此测试可以注入 fake parser、fake arXiv client 和 FakeLLMProvider。
 
-实现 Model Context Protocol，标准化 Agent 与外部工具的通信：
+## 关键数据流
 
-```
-Agent                         MCP Server                   External
-  │                               │                           │
-  │  list_tools()                 │                           │
-  ├──────────────────────────────►│                           │
-  │  [tool1, tool2, ...]         │                           │
-  │◄──────────────────────────────┤                           │
-  │                               │                           │
-  │  call_tool("arxiv_search", {}) │                          │
-  ├──────────────────────────────►│                           │
-  │                               │  GET /api/query?q=...    │
-  │                               ├──────────────────────────►│
-  │                               │  [results]               │
-  │                               │◄──────────────────────────┤
-  │  {content: "...", data: ...}  │                           │
-  │◄──────────────────────────────┤                           │
+### 本地 PDF
+
+```text
+read-pdf → PDFParser.parse → Paper → PaperReader.read → PaperNote → JSON
 ```
 
-### 6. Provider 层 (`providers/`)
+### arXiv
 
-统一的 LLM 调用抽象：
-
-```python
-class BaseProvider(ABC):
-    async def generate(request: LLMRequest) -> LLMResponse
-    async def generate_stream(request: LLMRequest) -> AsyncIterator[str]
-    async def count_tokens(text: str) -> int
-
-# 实现
-OpenAIProvider(BaseProvider)      # OpenAI / DeepSeek / Qwen / vLLM / Ollama
-AnthropicProvider(BaseProvider)   # Claude
-LocalProvider(BaseProvider)       # Ollama / 本地模型
+```text
+read_arxiv → normalize ID → download PDF → parse → read → PaperNote
 ```
 
-### 7. 安全护栏 (`guardrails/`)
+### 已序列化论文
 
-环绕所有 Agent 操作的安全层：
-
-```
-Input Message
-    │
-    ▼
-┌──────────────┐
-│ Input Guard   │  ── 脱敏、注入检测、合法内容校验
-└──────┬───────┘
-       │ ✅
-       ▼
-   Agent 处理
-       │
-       ▼
-┌──────────────┐
-│ Tool Policy   │  ── 工具调用权限校验、操作白名单
-└──────┬───────┘
-       │ ✅
-       ▼
-   Tool 执行
-       │
-       ▼
-┌──────────────┐
-│ Output Guard  │  ── 输出过滤、抄袭检测、合理性校验
-└──────┬───────┘
-       │ ✅
-       ▼
-   Output Message
+```text
+read-json → Paper.model_validate_json → PaperReader.read → PaperNote
 ```
 
-### 8. 可观测性 (`observability/`)
+## P2+ 目标架构
 
-| 维度 | 工具 | 采集内容 |
-|------|------|---------|
-| **Trace** | OpenTelemetry → Jaeger | 每个 ReAct 步骤的 Span（think / act / observe） |
-| **Cost** | 自定义 tracker | Token 用量 × 单价 = 实时成本 |
-| **Metrics** | Prometheus 兼容 | 延迟、成功率、步数分布 |
-| **Logs** | structlog → JSON | 结构化日志，每行一个 Agent 事件 |
+ReproForge 的长期目标仍是多 Agent 复现平台：
 
-### 9. 评测体系 (`evaluation/`)
+```mermaid
+flowchart LR
+    PR[PaperReader - P1] --> MT[Methodologist - P2]
+    MT --> CF[CodeForger - P3]
+    CF --> EX[Experimentor - P3]
+    EX --> VF[Verifier - P4]
+    MT -.-> MC[MathChecker - P4]
+    MC -.-> VF
+    VF --> REPORT[Reproduction Report]
+```
 
-内置 Benchmark：
+Memory/ChromaDB、Neo4j、MCP、FastAPI、前端、Guardrails、Evaluation 和 Observability 都属于后续阶段。相应文档当前用于记录设计方向，不构成已实现声明。
 
-| Benchmark | 评测对象 | 指标 |
-|-----------|---------|------|
-| Paper QA | PaperReader | 问答准确率 |
-| Algorithm Extraction | Methodologist | 算法提取完整性 |
-| Code Correctness | CodeForger | 生成代码能否运行 / 测试通过 |
-| Reproduction Fidelity | 全管道 | 复现指标偏差百分比 |
-| Survey Quality | SurveyScribe | 综述覆盖度 / 引用准确率 |
+## 延伸阅读
 
----
-
-## 数据流决策
-
-### 同步 vs 异步
-
-- **Agent 间通信**：异步（`asyncio`），多个 Agent 可并发执行
-- **LLM 调用**：异步流式（SSE / WebSocket）
-- **工具调用**：部分异步（API 查询）、部分同步（文件 I/O）
-- **实验执行**：异步启动 Docker 容器，回调通知结果
-
-### 状态管理
-
-- **Agent 状态**：内存管理，通过 `AgentState` 枚举追踪
-- **任务状态**：`TaskResult` 序列化，支持持久化
-- **长期记忆**：ChromaDB 和 Neo4j 外部存储
-- **配置**：Pydantic 模型，从 `.env` / YAML / API 参数加载
+- [P1 设计论证](../P1-DESIGN-RATIONALE.md)
+- [P1 技术参考](../P1-TECHNICAL-REFERENCE.md)
+- [P0 设计论证](../P0-DESIGN-RATIONALE.md)
+- [P0 技术参考](../P0-TECHNICAL-REFERENCE.md)

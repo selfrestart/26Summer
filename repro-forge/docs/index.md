@@ -1,8 +1,9 @@
 # ReproForge Documentation
 
-Welcome to the ReproForge documentation! ReproForge is a multi-agent framework
-for automated computer science paper reading, methodology analysis, and
-reproduction.
+Welcome to the ReproForge documentation. ReproForge is being built as a
+multi-agent framework for computer-science paper reading and reproduction. The
+current release is a working P1 paper-reading system; the full reproduction
+platform remains the roadmap target.
 
 !!! note "Current project status"
 
@@ -11,12 +12,18 @@ reproduction.
     `PaperPipeline`/CLI surface. Method extraction, reproduction execution,
     knowledge graph, API, and frontend remain roadmap work.
 
+    See [P1 Design Rationale](P1-DESIGN-RATIONALE.md) for the decisions behind
+    the implementation and [P1 Technical Reference](P1-TECHNICAL-REFERENCE.md)
+    for APIs, commands, environment variables, failure modes, and verification.
+    Developers continuing the implementation should also read the
+    [P1 Implementation Guide](P1-IMPLEMENTATION-GUIDE.md).
+
 ## What is ReproForge?
 
-ReproForge addresses the **reproducibility crisis** in computer science by
-automating the end-to-end pipeline of understanding and reproducing research
-papers. It employs **six specialized AI agents** that collaborate to read,
-analyze, implement, execute, and verify research results.
+ReproForge addresses the **reproducibility crisis** in computer science. P1
+implements the first vertical slice: turn a local PDF or arXiv paper into a
+structured, traceable `PaperNote`. The six-agent pipeline described below is
+the target architecture, not the current executable surface.
 
 <div class="grid cards" markdown>
 
@@ -24,12 +31,12 @@ analyze, implement, execute, and verify research results.
 
     ---
 
-    Upload a PDF or provide an arXiv ID. Get a structured reading note with
-    multi-level summaries, methodology analysis, and algorithm extraction.
+    Parse a PDF or download from arXiv, then get a structured note with TL;DR,
+    contributions, methodology summary, findings, strengths, and questions.
 
-    [:octicons-arrow-right-24: Get started](getting-started/quickstart.md)
+    [:octicons-arrow-right-24: P1 quickstart](getting-started/quickstart.md)
 
-- :material-flask-round-bottom: **Paper Reproduction**
+- :material-flask-round-bottom: **Paper Reproduction (Roadmap)**
 
     ---
 
@@ -38,7 +45,7 @@ analyze, implement, execute, and verify research results.
 
     [:octicons-arrow-right-24: Reproduce a paper](user-guide/reproduction.md)
 
-- :material-graph: **Knowledge Graph**
+- :material-graph: **Knowledge Graph (Roadmap)**
 
     ---
 
@@ -47,7 +54,7 @@ analyze, implement, execute, and verify research results.
 
     [:octicons-arrow-right-24: Explore knowledge graph](architecture/knowledge-graph.md)
 
-- :material-robot: **Multi-Agent System**
+- :material-robot: **Multi-Agent System (P1: PaperReader only)**
 
     ---
 
@@ -56,7 +63,7 @@ analyze, implement, execute, and verify research results.
 
     [:octicons-arrow-right-24: Architecture](architecture/overview.md)
 
-- :material-cloud-braces: **MCP Protocol**
+- :material-cloud-braces: **MCP Protocol (Roadmap)**
 
     ---
 
@@ -65,7 +72,7 @@ analyze, implement, execute, and verify research results.
 
     [:octicons-arrow-right-24: MCP Integration](architecture/mcp-integration.md)
 
-- :material-shield-check: **Safety & Guardrails**
+- :material-shield-check: **Safety & Guardrails (Roadmap)**
 
     ---
 
@@ -76,7 +83,22 @@ analyze, implement, execute, and verify research results.
 
 </div>
 
-## Key Concepts
+## Current P1 Data Flow
+
+```mermaid
+flowchart LR
+    INPUT[PDF or arXiv] --> PARSE[PDFParser / ArxivClient]
+    PARSE --> PAPER[Paper + Section]
+    PAPER --> CHUNK[PaperChunker]
+    CHUNK --> READER[PaperReader]
+    READER --> NOTE[PaperNote JSON]
+    READER --> TRACE[Trace + token usage]
+```
+
+## Target Architecture Concepts
+
+The following concepts explain the planned end state. Only the P1 components
+identified in the status table are implemented today.
 
 ReproForge is built around five core abstractions:
 

@@ -96,8 +96,10 @@ nav:
     - MCP Integration: architecture/mcp-integration.md
   - API Reference:
     - Core: api-reference/core.md
+    - Paper: api-reference/paper.md
     - Agents: api-reference/agents.md
     - Tools: api-reference/tools.md
+    - CLI: api-reference/cli.md
     - MCP: api-reference/mcp.md
   - Examples:
     - Paper Deep-Dive: examples/paper-dive.md
@@ -111,6 +113,9 @@ nav:
     - Interview Question Bank: interview-question-bank.md
     - P0 Design Rationale: P0-DESIGN-RATIONALE.md
     - P0 Technical Reference: P0-TECHNICAL-REFERENCE.md
+    - P1 Design Rationale: P1-DESIGN-RATIONALE.md
+    - P1 Technical Reference: P1-TECHNICAL-REFERENCE.md
+    - P1 Implementation Guide: P1-IMPLEMENTATION-GUIDE.md
   - Evaluation:
     - Benchmarks: evaluation/benchmarks.md
     - Results: evaluation/results.md

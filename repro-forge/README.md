@@ -5,7 +5,7 @@
 **Automated Paper Reading, Methodology Analysis & Reproduction for CS Research**
 
 [![CI](https://github.com/selfrestart/26Summer/actions/workflows/ci.yml/badge.svg)](https://github.com/selfrestart/26Summer/actions/workflows/ci.yml)
-[![Status](https://img.shields.io/badge/status-P0%20core-yellow.svg)](#project-status)
+[![Status](https://img.shields.io/badge/status-P1%20paper%20reading-green.svg)](#project-status)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-GitHub-blue)](https://github.com/selfrestart/26Summer/tree/main/repro-forge/docs)

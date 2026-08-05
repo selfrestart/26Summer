@@ -1,3 +1,5 @@
-﻿# results
+# Evaluation Results（P8 规划）
 
-Coming soon.
+当前没有可宣称的论文问答或复现质量排行榜。已验证的是工程基线：107 个测试
+通过、总体覆盖率 86.06%，并完成 Ruff、mypy、MkDocs 和构建检查；这些数字不
+等价于模型质量评测。

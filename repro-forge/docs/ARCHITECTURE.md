@@ -9,14 +9,24 @@
 >
 > For configuration and command references, see
 > [P0-TECHNICAL-REFERENCE.md](P0-TECHNICAL-REFERENCE.md).
+>
+> **Implementation boundary:** P1 currently implements the paper-reading
+> vertical slice (`PDFParser`/`ArxivClient` → `PaperChunker` → `PaperReader` →
+> `PaperNote`). The six-agent, memory, MCP, API, and UI elements below are
+> target architecture unless explicitly marked as P1.
+
+For the current implementation in Chinese, see
+[architecture/overview.md](architecture/overview.md). For P1 decisions and
+concrete commands, see [P1-DESIGN-RATIONALE.md](P1-DESIGN-RATIONALE.md) and
+[P1-TECHNICAL-REFERENCE.md](P1-TECHNICAL-REFERENCE.md).
 
 ---
 
 ## 1. Project Overview
 
 ReproForge addresses the **Reproducibility Crisis** in computer science
-research through a multi-agent system that automates the end-to-end
-pipeline of reading, understanding, and reproducing academic papers.
+research. The current P1 release provides a working paper-reading vertical
+slice; the complete multi-agent pipeline is the planned end state.
 
 **Six specialized AI agents** collaborate to read papers, extract
 algorithms, verify math, generate runnable code, execute experiments in
