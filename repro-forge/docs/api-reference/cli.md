@@ -32,4 +32,4 @@ localhost、loopback 和私有网段的兼容 endpoint 可以 keyless 运行。
 ## CLI 与 Python API 的边界
 
 P1 CLI 没有独立的 arXiv search 子命令，也没有启动 FastAPI 服务。arXiv
-搜索、下载和 `read_arxiv` 通过 Python API 使用；HTTP API 属于 P2+ 规划。
+搜索、下载和 `read_arxiv` 通过 Python API 使用；HTTP API 属于 P6 规划。

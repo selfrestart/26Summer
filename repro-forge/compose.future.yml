@@ -1,13 +1,18 @@
-# Optional service templates for post-P0 phases. Nothing in P0 depends on
-# these services; start them explicitly with `docker compose -f compose.future.yml up`.
+# Optional service templates for planned phases. Neo4j and Chroma belong to P5;
+# Jaeger belongs to P8. P0/P1 do not depend on these services, and this file is
+# not evidence that their application adapters are implemented. Start it only
+# with `docker compose -f compose.future.yml up`.
+# Image references are explicit so a local run cannot silently select `latest`.
+# P5/P8 readiness reviews must record compatible tags and digests; P7 production
+# gates require digest pinning, SBOMs, and image-policy checks.
 services:
   neo4j:
-    image: neo4j:5-community
+    image: "${NEO4J_IMAGE:?Set NEO4J_IMAGE to a reviewed tag or digest}"
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
     environment:
-      NEO4J_AUTH: "${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-password}"
+      NEO4J_AUTH: "${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:?Set NEO4J_PASSWORD in .env}"
       NEO4J_PLUGINS: '["apoc"]'
     volumes:
       - neo4j-data:/data
@@ -17,16 +22,16 @@ services:
         - CMD-SHELL
         - >-
           cypher-shell -u "${NEO4J_USER:-neo4j}"
-          -p "${NEO4J_PASSWORD:-password}" "RETURN 1"
+          -p "${NEO4J_PASSWORD:?Set NEO4J_PASSWORD in .env}" "RETURN 1"
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
 
   chroma:
-    image: chromadb/chroma:latest
+    image: "${CHROMA_IMAGE:?Set CHROMA_IMAGE to a reviewed tag or digest}"
     ports:
-      - "8001:8000"
+      - "127.0.0.1:8001:8000"
     volumes:
       - chroma-data:/chroma/chroma
     environment:
@@ -34,11 +39,11 @@ services:
       ANONYMIZED_TELEMETRY: "FALSE"
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: "${JAEGER_IMAGE:?Set JAEGER_IMAGE to a reviewed tag or digest}"
     ports:
-      - "16686:16686"
-      - "4317:4317"
-      - "4318:4318"
+      - "127.0.0.1:16686:16686"
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
 

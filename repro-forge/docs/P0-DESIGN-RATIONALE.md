@@ -5,6 +5,12 @@
 > **读者**: 面试官、技术评审、自己的复习备忘
 >
 > **行文原则**: 每个技术选择遵循 **问题 → 备选方案 → 决策依据 → 代价认知** 四段式论证。
+>
+> **真实性边界**：本文同时包含当前实现决策和目标架构论证。P0、P1 已完成，
+> P2–P8 仍是规划。凡涉及 Methodologist、CodeForger、Experimentor、
+> MathChecker、Verifier、长期 Memory、知识图谱、MCP/API/UI、Guardrails、
+> Benchmark 或完整 OpenTelemetry 的内容，均应按对应阶段的设计方案理解，
+> 不能作为当前代码已实现的陈述。统一状态见 [P0–P8 总体路线图](ROADMAP.md)。
 
 ---
 
@@ -47,7 +53,7 @@
 | PaperQA / Elicit | 论文问答 | 只做导读，不做代码生成 |
 | ReScience C | 人工复现期刊 | 依赖人工，无自动化 |
 | SWE-bench (Agent) | 代码仓库 Bug 修复 | 面向软件工程，不面向学术论文 |
-| **ReproForge** | **端到端自动复现** | **导读→代码生成→实验执行→结果验证的完整闭环** |
+| **ReproForge（目标）** | **端到端自动复现** | **P1 已完成导读；P2–P4 规划代码生成、实验执行和结果验证闭环** |
 
 ---
 
@@ -132,7 +138,7 @@ assert provider.request_count == 1   # 可断言 LLM 被调用次数
 |---------|---------|----------|
 | **确定性** | 按序返回预定义 responses | 同一测试永远返回相同结果 |
 | **可观察** | `request_count`、`last_request` | 断言 Agent 调用 LLM 的次数 |
-| **秒级完成** | 无网络 I/O | 全部 25 个单元测试 < 1 秒 |
+| **快速反馈** | 无网络 I/O | 核心行为可在本地确定性回归，不受模型响应波动影响 |
 | **循环返回** | `set_responses()` 动态修改 | 模拟多轮对话的不同回复 |
 
 ### 2.5 文档引擎：MkDocs Material vs Sphinx vs Docusaurus
@@ -176,6 +182,9 @@ assert provider.request_count == 1   # 可断言 LLM 被调用次数
 **额外考量**：Agent 各模块间有密集内部依赖（types → base → agents → pipeline），拆分仓库会增加接口维护成本。
 
 ### 3.2 六层架构设计
+
+这是 P0 确立的**目标分层**。当前落地的是第 1 层，以及 P1 在第 3/4 层的
+论文阅读纵向切片；P5 的基础设施和 P6 的 API/UI 尚未实现。
 
 ```
 ┌─────────────────────────────────────┐
@@ -235,7 +244,7 @@ optional-dependencies（按需安装）
 | 导读 + 方法分析 合并 | 上下文窗口冲突 | PaperReader + Methodologist | 各自有完整上下文 |
 | 代码生成 + 实验执行 不分离 | 生成代码后无自动执行 | CodeForger → Experimentor 流水线 | 自动化链式流程 |
 
-**6 个 Agent 的职责边界**：
+**6 个目标 Agent 的职责边界**（当前仅 `PaperReader` 已实现）：
 
 | Agent | 输入 | 输出 | 核心 Prompt |
 |-------|------|------|------------|
@@ -256,9 +265,13 @@ optional-dependencies（按需安装）
 | 论文复现（确定路径） | Plan-Execute | 先规划复现清单，再逐步执行 |
 | 多论文综述 | Plan-Execute | 先规划检索策略，再批量执行 |
 
-**实现**：通过 `AgentConfig.execution_mode` 动态切换。
+**阶段状态**：P0/P1 只实现 ReAct。P3 计划先在 CodeForger/Experimentor
+内部实现可审计的 Plan-Execute 风格流程；当前 `AgentConfig` 没有
+`execution_mode` 字段，不能宣称可动态切换。
 
 ### 4.3 Agent 间通信协议
+
+以下协议是目标设计词汇，尚不是可导入或可调用的公共 API：
 
 | 协议 | 语义 | 使用场景 |
 |------|------|---------|
@@ -279,16 +292,21 @@ optional-dependencies（按需安装）
 >
 > 这不是说 LangChain 不好，而是对于'展示技术深度'这个目标，自建框架是更优解。"
 
-### 4.5 MCP 协议：为什么自研
+### 4.5 MCP 协议：P6 计划如何实现
 
-**自研 MCP 的收益**：
+P6 将优先遵循正式 MCP 规范，并让 MCP 复用统一 application service，而不是
+在 transport 层复制业务逻辑。是否基于官方 SDK 或实现薄适配层，应在 P6
+根据兼容性、维护成本和 contract tests 决定。计划中的收益是：
 1. **理解协议细节**：能解释 JSON-RPC 消息格式、stdio/SSE 双传输的原理
 2. **定制化**：论文特有的数据结构（LaTeX 公式、BibTeX 引用）需要定制的 MCP Resource 定义
-3. **集成便利**：与 `tools/registry.py` 深度耦合
+3. **集成一致性**：tool schema 与 application service DTO 共源
 
 ### 4.6 面试话术
 
-> "我设计了 6 个专项 Agent，遵循单一职责原则。Agent 间通过 Handoff / Delegate / Broadcast 三种协议通信，参考了 Anthropic 的 Agent 实践论文和 Google ADK 框架的理念。执行模式支持 ReAct 和 Plan-Execute 两种，选择依据是任务路径的确定性。"
+> "目标架构按职责拆成 6 个专项 Agent，但当前只完成了 PaperReader。P0/P1
+> 使用可验证的 ReAct 生命周期；P2 先交付带证据的 Methodologist，P3 再为
+> 代码生成和实验引入可审计的 Plan-Execute 风格流程。Handoff、Delegate 和
+> Broadcast 仍是后续编排设计，不是当前公共 API。"
 
 ---
 
@@ -346,20 +364,25 @@ assert result.status == "success"
 
 ### 5.5 面试话术
 
-> "工程质量体现在 6 层防线上——从本地 EditorConfig 到 CI 的 mypy strict 和 3 个 Python 版本的矩阵测试。对于 Agent 项目测试的特殊挑战，我设计了 FakeLLMProvider 来模拟 LLM 输出，全部 25 个单元测试在 1 秒内完成。提交规范采用 Conventional Commits，配合 bumpver 实现语义化版本管理。"
+> "工程质量体现在从本地格式检查到 CI 的 Ruff、mypy strict 和多 Python
+> 版本测试。FakeLLMProvider 把模型输出变成确定性 fixture，使 Agent 生命周期、
+> 工具调用和失败路径可离线回归；真实 Provider 再由独立 smoke test 覆盖。"
 
 ---
 
-## 第六章　Memory 系统：三阶记忆 vs 普通 RAG
+## 第六章　P5 规划：Memory、Artifact 与知识图谱
+
+本章是 P5 设计论证。当前 `memory/` 和 `knowledge/` 只是空命名空间，尚无
+ChromaDB/Neo4j adapter、schema、迁移或跨存储一致性实现。
 
 ### 6.1 为什么需要三阶记忆
 
 | 维度 | 纯上下文窗口 | 三阶记忆 |
 |------|-----------|---------|
-| 容量 | 128K-200K tokens | **无上限** |
+| 容量 | 128K-200K tokens | **由持久化配额控制，可扩展但并非无上限** |
 | 持久性 | 会话结束即丢失 | **跨会话持久** |
 | 检索效率 | 全量处理（慢、贵） | **按需检索（快、省 token）** |
-| 结构化查询 | 不支持 | **知识图谱支持 SPARQL 类查询** |
+| 结构化查询 | 不支持 | **计划由 Neo4j/Cypher 与 NetworkX adapter 提供** |
 
 **三阶对应三种记忆类型**：
 
@@ -407,7 +430,10 @@ assert result.status == "success"
 
 ### 6.6 面试话术
 
-> "我的记忆系统不是简单的'把文档向量化然后检索'，而是一个三阶架构。Working Memory 处理当前上下文，Episodic Memory（ChromaDB）存储历史分析，Semantic Memory（Neo4j 知识图谱）捕捉论文-方法-基准之间的关系。这个设计参考了 Atkinson-Shiffrin 人类认知模型，并针对论文复现场景做了定制。"
+> "P5 计划把版本化 artifact 作为事实源，再用 ChromaDB 和
+> Neo4j/NetworkX 构建可重建索引。Working context 处理当前任务，Episodic
+> index 支持语义召回，Semantic graph 表达论文、方法、数据集、指标和证据关系。
+> 当前只完成了设计和依赖预留，尚未实现存储 adapter。"
 
 ---
 
@@ -452,22 +478,25 @@ PMC ◄──(6月 + 投票)── Maintainer ◄──(2月 + 投票)───�
 
 ## 第八章　关键取舍：10 组二元决策
 
-| # | 决策点 | 选择 | 关键理由 |
-|---|--------|------|---------|
-| 1 | 自建框架 vs 封装 LangChain | **自建** | 技术深度展示是核心目标 |
-| 2 | 同步 vs 异步 | **全异步** | Agent 间通信天然异步、LLM 调用 I/O 密集 |
-| 3 | DryRun 后端 vs 必须 GPU | **DryRun 默认** | 先让流水线跑通，再让 GPU 着落 |
-| 4 | Provider 热切换 vs litellm | **自建抽象层** | lighter weight + 面试可讲性强 |
-| 5 | 流式 vs 非流式 | **双模式** | `run()` 非流式 + `stream()` SSE |
-| 6 | JSON Schema vs Function Calling | **Function Calling** | 更原生，减少序列化层 |
-| 7 | Docker 隔离 vs 代码沙箱 | **Docker** | 更强的隔离性 |
-| 8 | 嵌入模型：本地 vs API | **API 默认 + 本地可选** | API 精度高，本地省成本 |
-| 9 | Pydantic v2 vs dataclasses | **Pydantic v2** | 数据校验 + 序列化 + 类型一体化 |
-| 10 | 动态规划 vs 静态配置 | **YAML 配置** | 可版本控制，可 review |
+| # | 决策点 | 当前选择/规划 | 状态与理由 |
+|---|--------|---------------|------------|
+| 1 | 自建框架 vs 封装 LangChain | 小型自建 Core | P0 已完成，保持领域契约透明 |
+| 2 | 同步 vs 异步 | async 接口 | P0/P1 已完成，适合 Provider I/O |
+| 3 | DryRun vs 必须 GPU | dry-run 优先 | P3 规划，先验证 manifest 再消耗算力 |
+| 4 | Provider 热切换 vs litellm | 薄 Provider 抽象 | P0/P1 已完成 OpenAI-compatible 路径 |
+| 5 | 流式 vs 非流式 | Provider 双模式 | P1 已完成 Provider stream；SSE 属于 P6 |
+| 6 | JSON Schema vs tool calling | OpenAI-compatible tool calling | P1 PaperReader 已使用 |
+| 7 | Docker 隔离 vs宿主执行 | 受限 Docker | P3 规划，必须满足资源/网络/挂载限制 |
+| 8 | 嵌入模型：本地 vs API | adapter 后决定 | P5 规划，索引必须记录 embedding 版本 |
+| 9 | Pydantic v2 vs dataclasses | 边界模型优先 Pydantic | P0/P1 已采用，内部对象按需选择 |
+| 10 | 动态规划 vs静态配置 | versioned schema/config | P2–P8 逐阶段冻结，避免隐藏默认值 |
 
 ### 8.1 面试话术：「自建 vs 框架」
 
-> "我做了很多'反框架'的选择——不用 LangChain 做 Agent，不用 litellm 做 Provider，不用社区 MCP 实现。每个选择背后都有明确理由：LangChain 的抽象层次太高，不适合展示对 Agent 内部机制的理解。litellm 太重（200MB+），自建的 5KB 抽象层足够用。社区 MCP 实现封装了太多细节，而我要的是理解协议本身。"
+> "P0/P1 自建了小型 Agent/Provider 边界，是为了让状态机、工具协议和失败语义
+> 可测试，而不是排斥所有框架。P6 实现 MCP 时会优先规范兼容和维护成本；如果
+> 官方 SDK 能减少协议漂移，就应复用 SDK，只把领域 DTO 和 application service
+> 保持在自己的边界内。"
 
 ---
 
@@ -481,7 +510,10 @@ PMC ◄──(6月 + 投票)── Maintainer ◄──(2月 + 投票)───�
 | `pip install repro-forge[pdf,openai]` | ~30 | ~200MB | 论文导读 |
 | `pip install repro-forge[all]` | ~120 | ~1.5GB | 完整开发 |
 
-### 9.2 安全护栏三层设计
+### 9.2 P7 规划：安全护栏三层设计
+
+当前只有 Pydantic 边界校验和包镜像的非 root 用户等局部基础。输入注入检测、
+工具策略、输出检查、身份权限和审计属于 P7，尚未实现。
 
 ```
 Input → [Input Guard: Pydantic 校验 + 注入检测]
@@ -501,22 +533,27 @@ Input → [Input Guard: Pydantic 校验 + 注入检测]
 
 - **多阶段构建**：builder（编译工具链）→ runtime（仅运行时依赖），减小攻击面
 - **非 root 用户**：`USER reproforge`，最小权限原则
-- **健康检查**：`HEALTHCHECK` 每 30 秒验证 API 可用性
+- **当前用途**：镜像入口是 `repro-forge` CLI，不是 API，也不是执行生成代码的沙箱
+- **P3 最低门**：默认断网、资源/PID/磁盘/超时限制、只读 rootfs、受限挂载、secret 清理和可靠 cleanup
 
 ### 9.4 Token 感知的上下文管理
 
-通过 `tiktoken` 精确计算 token 数量，实现：
-- 滑动窗口管理（超出窗口上限时自动截断早期内容）
-- 内容摘要压缩（将完整内容压缩为关键摘要后再送入）
-- 按 token 预算分配上下文空间
+P1 用 `tiktoken` 做 chunk 估算，并在不可用时采用保守 fallback；当前没有通用的
+滑动窗口或自动摘要压缩器。P2 及以后需要按 evidence 优先级分配上下文，并在
+截断时保留可追踪的来源引用。
 
 ### 9.5 面试话术
 
-> "安全上实现了三层护栏：Input Guard 防注入，Tool Policy 控权限，Output Guard 做合规。Docker 采用多阶段构建减小攻击面，容器以非 root 用户运行。Token 管理用 tiktoken 精确计数，实现滑动窗口和摘要压缩。"
+> "当前安全基线包括 Pydantic 输入校验、受控的 P1 只读工具，以及非 root
+> 包镜像。P3 在执行生成代码前必须加入最小沙箱控制；P7 再提供身份、策略、
+> Guardrails 和审计。当前不能宣称已经有完整的注入检测或输出合规系统。"
 
 ---
 
-## 第十章　评测体系：如何量化 Agent 质量
+## 第十章　P8 规划：如何量化 Agent 质量
+
+当前验证结果是工程测试、静态检查、构建和 smoke test，不是模型质量 benchmark。
+本章描述 P8 的评测设计。
 
 ### 10.1 多维度评测框架
 
@@ -568,11 +605,16 @@ Fidelity = (1 - Σ|claimed_i - reproduced_i| / claimed_i / N) × 100
 
 ### 10.5 面试话术
 
-> "评测是 Agent 系统最难的部分。我的做法是多维度评测——论文理解用问答准确率，代码生成用可运行率，复现用忠实度分数。LLM-as-Judge 作为主力手段，通过多 Judge 交叉验证和人工 golden set 校准来保证可信度。"
+> "P8 会为各阶段分别建立确定性指标、人工 golden set 和必要的
+> LLM-as-Judge 辅助评测。Judge 不能作为唯一真值，安全或核心正确性失败也不能
+> 被平均总分抵消。当前 107 个测试只证明工程回归基线，不证明论文复现质量。"
 
 ---
 
-## 第十一章　可观测性
+## 第十一章　P8 规划：可观测性
+
+P0/P1 已有进程内 `AgentTrace` 和 token usage；完整 OTel span/metrics/log
+correlation、成本预算和发布 scorecard 尚未实现。
 
 ### 11.1 为什么 OTel 而不是 LangSmith
 
@@ -615,7 +657,9 @@ CostTracker.track(
 
 ### 11.4 面试话术
 
-> "可观测性选了 OpenTelemetry 而非 LangSmith——这是 CNCF 的开放标准。每个 Agent 的 think-act-observe 循环都作为 Span 记录，可回放分析。成本追踪按 model × token 数量和实时单价计算。"
+> "当前 `AgentTrace` 能记录 ReAct 步骤和 token usage。P8 计划把
+> request/job/pipeline/agent/provider/tool/backend 统一映射到 OpenTelemetry，
+> 并版本化价格表与发布 scorecard；这些平台能力目前尚未落地。"
 
 ---
 
@@ -666,16 +710,21 @@ async def generate_with_fallback(request, providers):
 
 ### 12.4 面试话术
 
-> "我没有用 litellm——而是自建了一个 5KB 的 Provider 抽象层。这让我能讲清楚 OpenAI 和 Anthropic 在 function calling 上的实现差异、streaming 的处理方式、以及降级策略的设计。面试官如果追问 API 调用细节，我能从 HTTP 请求格式讲到 token 计数方式。"
+> "项目用小型 `BaseProvider` 契约隔离模型调用，P1 已实现并验证
+> OpenAI-compatible/DeepSeek 的生成、流式 stop 传播和 keyless 本地端点。
+> Anthropic adapter 和跨 Provider 自动降级仍是规划，不能从可选依赖反推为
+> 当前能力。"
 
 ---
 
-## 第十三章　实验执行引擎：多后端设计
+## 第十三章　P3 规划：实验执行引擎
 
 ### 13.1 五层执行后端
 
 ```
-DryRun（默认）→ Docker（本地）→ Colab（免费 GPU）→ SSH（实验室集群）→ VastAI（租用 GPU）
+首批：DryRun → 受限 local fixture → 受限 Docker（CPU 优先）
+
+后续候选：Colab / SSH / VastAI；这些远程后端不属于 P3 首批交付。
 ```
 
 **为什么先做 DryRun**：
@@ -700,11 +749,15 @@ class ColabBackend(BaseExecutionBackend):
     # 推送代码到 Colab + 触发执行 + 拉取结果
 ```
 
-这是一个**架构亮点**——不是因为"没有 GPU 所以降级"，而是因为"设计了抽象层所以支持多后端"。
+以上类是设计草图，不是当前代码。P3 只有在 manifest、超时、资源限制、默认
+断网、受限挂载、secret 清理和 cleanup 均有测试后，才能宣称 Docker execution
+完成；否则最多只完成 dry-run。
 
 ### 13.3 面试话术
 
-> "实验执行设计了五层后端——从 DryRun 到 VastAI。这不是妥协，而是架构设计的体现。DryRun 模式下生成完整代码、配置和模拟报告。真正需要训练时，切换到 Colab/SSH/VastAI 后端。多后端设计体现了对异构计算环境落地的思考。"
+> "P3 计划先交付可审计 bundle、dry-run 和受限 Docker CPU 执行。远程 GPU
+> 后端会在本地契约、凭据和计费风险处理成熟后再评估。当前没有 Experimentor
+> 后端实现，因此不会把设计草图描述成已运行能力。"
 
 ---
 
@@ -712,17 +765,25 @@ class ColabBackend(BaseExecutionBackend):
 
 ### 14.1 技术面试版（30 秒）
 
-> "我开发了一个叫 ReproForge 的论文复现 Agent 系统。6 个专项 Agent 实现从 PDF 解析、算法提取、代码生成到 Docker 沙箱实验执行和指标验证的端到端自动化。自建了 Agent 框架（而非 LangChain）、用 mypy strict 做类型检查、FakeLLMProvider 让 25 个单元测试在 1 秒内完成。P0 完成了完整工程基础设施——打包系统、CI/CD 流水线、Docker 部署配置——覆盖率 91%。"
+> "我开发了 ReproForge 的前两个阶段：P0 建立类型、ReAct、Provider、测试、
+> CI 和包构建基线；P1 把本地 PDF/arXiv 转成可追踪的 `PaperNote`，支持
+> OpenAI-compatible/DeepSeek Provider、token-aware chunking、pipeline 和 CLI。
+> 当前基线是 107 个测试、Ruff、mypy、MkDocs 和 wheel smoke 全部通过；P2–P8
+> 已冻结接口和验收计划，但尚未实现。"
 
 ### 14.2 HR 面试版（30 秒）
 
-> "我最近在做一个开源项目叫 ReproForge，用多智能体系统帮助研究者更高效地复现论文。建立了完整的工程体系——CI/CD、代码质量检查、一键环境搭建。参考 Apache 基金会的开源治理模型，撰写了贡献指南、行为准则、安全策略等全套社区文档。这个项目锻炼了我在技术之外的项目管理、文档撰写和开源社区运营能力。"
+> "我在做一个开源项目 ReproForge，目标是逐阶段帮助研究者从阅读论文走向
+> 可验证复现。目前已完成工程基础和论文阅读链路，并建立 CI、代码质量、环境
+> 锁定、文档和开源治理；方法抽取、实验和验证按清晰的阶段门继续推进。"
 
 ### 14.3 非技术领导版（60 秒）
 
 > "我在做一个能让研究者更高效复现论文的工具。背景是——读论文时经常遇到作者声称效果很好但代码不公开，或者环境对不上。大量研究时间浪费在'能不能跑通'上。
 >
-> 方案是用多智能体系统自动化这个流程——从读论文、提取算法、生成代码，到在 Docker 里跑实验、对比结果——一条龙完成。像给研究者配了一个 AI 助手团队。
+> 方案是把流程拆成可验收阶段：目前能把 PDF/arXiv 论文变成结构化阅读笔记；
+> 后续再依次加入证据化方法抽取、代码与隔离实验、结果验证和知识沉淀。这样每
+> 一步都能独立测试，而不是先声称一个尚不可验证的一条龙系统。
 >
 > 商业价值：如果作为 SaaS 服务提供给高校和企业，解决学术可复现性这一系统性问题，市场空间可观。这个方向目前没有成熟的商业产品，是蓝海。"
 
@@ -734,9 +795,9 @@ class ColabBackend(BaseExecutionBackend):
 |------|----------|--------|---------|----------------|---------------|
 | 定位 | 通用 LLM 应用 | 多 Agent 协作 | 对话式 Agent | 企业级编排 | **论文复现专项** |
 | Agent 模型 | Chain/Agent | Crew/Task | ConversableAgent | Plugin/Function | **6 专项 Agent** |
-| MCP 支持 | ✅ | ❌ | ❌ | ❌ | **✅（自研）** |
-| 记忆系统 | 基础 | 无 | 无 | 基础 | **三阶记忆** |
-| 评测体系 | LangSmith 付费 | 无 | 无 | 无 | **内置 Benchmark** |
+| MCP 支持 | ✅ | ❌ | ❌ | ❌ | **P6 规划** |
+| 记忆系统 | 基础 | 无 | 无 | 基础 | **P5 规划** |
+| 评测体系 | LangSmith 付费 | 无 | 无 | 无 | **P8 规划** |
 | 学习深度 | 浅 | 浅 | 中 | 浅 | **深** |
 | 面试可讲性 | 一般 | 一般 | 较好 | 一般 | **最佳** |
 

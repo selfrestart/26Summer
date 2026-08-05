@@ -55,7 +55,7 @@ uv sync --locked --extra arxiv --group dev
 uv sync --locked --extra openai --group dev
 ```
 
-核心安装不强制包含 PyMuPDF、arXiv SDK 或 OpenAI SDK。`all` extra 面向未来完整演示，不代表 P1 会启用其中的 P2+ 服务。
+核心安装不强制包含 PyMuPDF、arXiv SDK 或 OpenAI SDK。`all` extra 面向未来完整演示，不代表 P1 会启用其中的 P2–P8 服务。
 
 ## 4. 环境变量
 
@@ -269,4 +269,4 @@ uv sync --locked --extra pdf --group dev
 
 ### 想运行完整复现
 
-当前不能。P2+ 的 Methodologist、CodeForger、Experimentor、Verifier、存储和服务层尚未交付；不要把 `compose.future.yml` 或空包目录当作可运行实现。
+当前不能。P2 Methodologist、P3 CodeForger/Experimentor、P4 Verifier、P5 存储和 P6 服务层尚未交付；不要把 `compose.future.yml` 或空包目录当作可运行实现。

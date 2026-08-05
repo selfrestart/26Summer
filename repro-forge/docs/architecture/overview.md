@@ -1,6 +1,6 @@
 # 架构总览
 
-本文把 **当前可运行的 P1 架构** 与 **P2+ 目标架构** 分开描述。判断功能是否完成，应以当前代码、测试和 P1 技术参考为准，而不是以空目录或路线图图示为准。
+本文把 **当前可运行的 P1 架构** 与 **P2–P8 目标架构** 分开描述。判断功能是否完成，应以当前代码、测试和 P1 技术参考为准，而不是以空目录或路线图图示为准。
 
 ## 当前状态
 
@@ -131,7 +131,7 @@ read_arxiv → normalize ID → download PDF → parse → read → PaperNote
 read-json → Paper.model_validate_json → PaperReader.read → PaperNote
 ```
 
-## P2+ 目标架构
+## P2–P8 目标架构
 
 ReproForge 的长期目标仍是多 Agent 复现平台：
 
@@ -148,9 +148,24 @@ flowchart LR
 
 Memory/ChromaDB、Neo4j、MCP、FastAPI、前端、Guardrails、Evaluation 和 Observability 都属于后续阶段。相应文档当前用于记录设计方向，不构成已实现声明。
 
+## P0-P8 阶段架构
+
+后续建设不再用一张终态架构图代替实施边界。每个阶段必须产出可版本化的稳定
+契约：P2 `MethodAnalysis/EvidenceRef/EquationEvidence/ReportedClaimDraft`、P3 `ReproductionBundle/ExperimentRun`、P4
+`VerificationReport`、P5 repository/graph/survey、P6 API/MCP/UI、P7 policy/audit、
+P8 benchmark/telemetry/scorecard。完整阶段门见 [总体路线图](../ROADMAP.md)。
+
 ## 延伸阅读
 
 - [P1 设计论证](../P1-DESIGN-RATIONALE.md)
 - [P1 技术参考](../P1-TECHNICAL-REFERENCE.md)
+- [P0-P8 总体路线图](../ROADMAP.md)
+- [P2 实施规划](../P2-IMPLEMENTATION-PLAN.md)
+- [P3 实施规划](../P3-IMPLEMENTATION-PLAN.md)
+- [P4 实施规划](../P4-IMPLEMENTATION-PLAN.md)
+- [P5 实施规划](../P5-IMPLEMENTATION-PLAN.md)
+- [P6 实施规划](../P6-IMPLEMENTATION-PLAN.md)
+- [P7 实施规划](../P7-IMPLEMENTATION-PLAN.md)
+- [P8 实施规划](../P8-IMPLEMENTATION-PLAN.md)
 - [P0 设计论证](../P0-DESIGN-RATIONALE.md)
 - [P0 技术参考](../P0-TECHNICAL-REFERENCE.md)

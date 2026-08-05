@@ -28,25 +28,26 @@ ReproForge aims to become a multi-agent framework for reading, understanding, an
 
 ---
 
-## Key Features
+## Capabilities and Roadmap
 
 > **Capability boundary:** the table below includes roadmap targets. P0 and P1
 > are implemented; P1 covers local PDF/arXiv ingestion, token-aware chunking,
 > the PaperReader agent, provider injection, and the `PaperPipeline`/CLI.
+> Phase status follows the [roadmap lifecycle](docs/ROADMAP.md#3-状态生命周期与实施准入).
+> P2 is still `Planned`; its P2.0 contract/fixture review must pass before it is
+> `Ready` for implementation.
 
-| Category | Feature |
-|----------|---------|
-| 📄 **Multi-Agent Pipeline** | Six specialized agents (Reader, Methodologist, MathChecker, CodeForger, Experimentor, Verifier) with ReAct + Plan-Execute hybrid execution |
-| 🔬 **Reproduction Engine** | Paper → Algorithm Extraction → Code Generation → Docker Execution → Metric Verification, fully automated |
-| 🧠 **Three-Tier Memory** | Working memory (context) → Episodic memory (vector store) → Semantic memory (knowledge graph) |
-| 🌐 **MCP Protocol** | Full Model Context Protocol Server/Client implementation for standardized tool access |
-| 📊 **Knowledge Graph** | Neo4j-powered paper-method-benchmark relationship graph with evolution path tracing |
-| 📝 **Survey Generation** | Automated literature survey writing, driven by knowledge graph inference |
-| 🔌 **Multi-Provider LLM** | OpenAI, Anthropic, DeepSeek, Qwen, Ollama, vLLM — all through a unified interface |
-| 🚀 **Multi-Backend Execution** | Docker local / Google Colab GPU / Remote SSH / Dry-run preview |
-| 🛡️ **Safety Guardrails** | Code security review, plagiarism detection, result plausibility checks |
-| 📈 **Observability** | OpenTelemetry tracing, MLflow experiment tracking, cost monitoring |
-| 🧪 **Evaluation Suite** | Built-in benchmarks with LLM-as-Judge auto-evaluation |
+| Phase | Status | Capability |
+|-------|--------|------------|
+| **P0 Engineering Core** | Complete | Typed ReAct runtime, provider contract, deterministic tests, CI, docs, package and CLI image |
+| **P1 Paper Reading** | Complete | Local PDF/arXiv ingestion, token-aware chunking, PaperReader, `PaperNote`, pipeline and CLI |
+| **P2 Method Extraction** | Planned | Versioned `MethodAnalysis` with source-bound evidence, equation capture status and raw claim drafts |
+| **P3 Code and Experiments** | Planned | Auditable `ReproductionBundle`, dry-run and minimally safe sandbox execution |
+| **P4 Verification** | Planned | MathChecker, claim/metric alignment and `VerificationReport` |
+| **P5 Research Memory** | Planned | Versioned artifact repository, ChromaDB/Neo4j indexes and SurveyScribe |
+| **P6 Product Surface** | Planned | Shared application service, MCP, FastAPI jobs/SSE and React workbench |
+| **P7 Security** | Planned | Identity, policy engine, guardrails, supply-chain controls and audit |
+| **P8 Quality Platform** | Planned | Benchmarks, OpenTelemetry, cost tracking and release scorecards |
 
 ---
 
@@ -110,55 +111,31 @@ deterministic provider and does not require a PDF or API key.
 ### Run a Full Reproduction
 
 > **Planned API:** reproduction is scheduled for P3/P4 and is not implemented
-> in P0.
+> in the current P1 release. P2 first produces the evidence-grounded
+> `MethodAnalysis` consumed by P3.
 
-```python
-from repro_forge.reproduction import ReproductionPipeline
-
-pipeline = ReproductionPipeline(backend="dryrun")
-report = await pipeline.reproduce(
-    paper_path="path/to/paper.pdf",
-    target_metrics={"accuracy": 94.5},
-)
-print(f"Reproduction Fidelity: {report.fidelity_score:.1f}/100")
-print(f"Generated files: {report.output_dir}")
-# Contains: model.py, train.py, config.yaml, requirements.txt, report.md
-```
+No copy-paste API is shown for this workflow because those imports do not exist
+yet. The planned sequence is P2 `MethodAnalysis` → P3 `ReproductionBundle` and
+`ExperimentRun` → P4 `VerificationReport`. See the [P2](docs/P2-IMPLEMENTATION-PLAN.md),
+[P3](docs/P3-IMPLEMENTATION-PLAN.md), and [P4](docs/P4-IMPLEMENTATION-PLAN.md)
+plans for proposed contracts and completion gates.
 
 ---
 
-## Architecture
+## Current and Target Architecture
 
-```
-                         ┌──────────────────┐
-        arXiv ID ──────► │   PaperPipeline  │
-        / PDF            │  Parse & Extract  │
-                         └────────┬─────────┘
-                                  │
-          ┌───────────────────────┼───────────────────────┐
-          │                       │                       │
-          ▼                       ▼                       ▼
-   ┌──────────────┐      ┌──────────────┐       ┌──────────────┐
-   │ PaperReader  │      │Methodologist │       │ MathChecker  │
-   │ 分层导读 / 摘要 │ ───►│ 方法/算法提取  │ ───►  │ 数学校验      │
-   └──────────────┘      └──────────────┘       └──────────────┘
-          │                       │                       │
-          │              ┌────────┴────────┐              │
-          │              ▼                 ▼              │
-          │      ┌──────────────┐  ┌──────────────┐      │
-          │      │  CodeForger  │  │ Experimentor │      │
-          │      │  代码生成      │─►│  实验执行      │      │
-          │      └──────────────┘  └──────┬───────┘      │
-          │                               │              │
-          │                        ┌──────▼───────┐      │
-          │                        │   Verifier   │◄─────┘
-          │                        │  结果核验      │
-          │                        └──────┬───────┘
-          │                               │
-          │                     ┌─────────▼─────────┐
-          └────────────────────►│  Reproduction     │
-                                │  Report           │
-                                └───────────────────┘
+```mermaid
+flowchart LR
+    INPUT["PDF / arXiv"] --> P1["P1 complete: Paper + PaperNote"]
+    P1 --> P2["P2 planned: MethodAnalysis"]
+    P2 --> P3["P3 planned: Bundle + ExperimentRun"]
+    P3 --> P4["P4 planned: VerificationReport"]
+    P1 --> P5["P5 planned: Memory / Graph / Survey"]
+    P2 --> P5
+    P4 --> P5
+    P5 --> P6["P6 planned: MCP / API / Workbench"]
+    P6 --> P7["P7 planned: Security / Governance"]
+    P7 --> P8["P8 planned: Evaluation / Observability"]
 ```
 
 ---
@@ -170,6 +147,7 @@ Full documentation is available in the repository's [docs directory](https://git
 - [Getting Started](docs/getting-started/installation.md)
 - [User Guide](docs/user-guide/paper-reading.md)
 - [Architecture](docs/architecture/overview.md)
+- [P0-P8 Roadmap](docs/ROADMAP.md)
 - [API Reference](docs/api-reference/core.md)
 - [Examples](docs/examples/paper-dive.md)
 
@@ -181,13 +159,17 @@ Full documentation is available in the repository's [docs directory](https://git
 |-------|--------|---------|
 | P0 | ✅ Complete | Core abstractions, tests, packaging, CI, docs build, Docker package image |
 | P1 | ✅ Complete | PaperReader, PDF/arXiv parsers, chunker, provider boundary, pipeline, CLI |
-| P2 | 📋 Planned | Methodologist, algorithm extraction, KG writes |
-| P3 | 📋 Planned | CodeForger, Docker sandbox execution |
-| P4 | 📋 Planned | MathChecker, Verifier, reproduction reports |
-| P5 | 📋 Planned | Knowledge graph, SurveyScribe |
-| P6 | 📋 Planned | MCP protocol, FastAPI server, React frontend |
-| P7 | 📋 Planned | Guardrails: code review, plagiarism detection |
-| P8 | 📋 Planned | Evaluation benchmarks, observability |
+| P2 | 📋 Planned | Methodologist, evidence-grounded method/architecture/training extraction |
+| P3 | 📋 Planned | Auditable CodeForger bundles, dry-run and sandboxed experiment execution |
+| P4 | 📋 Planned | MathChecker, claim/metric alignment, Verifier and reproduction reports |
+| P5 | 📋 Planned | Versioned memory, knowledge graph and evidence-grounded surveys |
+| P6 | 📋 Planned | Shared application service, MCP, FastAPI jobs/SSE and React workbench |
+| P7 | 📋 Planned | Identity, policy engine, guardrails, execution hardening and audit |
+| P8 | 📋 Planned | Benchmarks, OpenTelemetry, cost tracking and release scorecards |
+
+`Planned` means the scope is documented, not that implementation may begin or
+that a placeholder package/configuration is usable. See the roadmap's
+Definition of Ready, stage gates, and safe stopping milestones.
 
 ---
 

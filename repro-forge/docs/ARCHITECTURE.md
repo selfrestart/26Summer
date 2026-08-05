@@ -12,13 +12,15 @@
 >
 > **Implementation boundary:** P1 currently implements the paper-reading
 > vertical slice (`PDFParser`/`ArxivClient` → `PaperChunker` → `PaperReader` →
-> `PaperNote`). The six-agent, memory, MCP, API, and UI elements below are
-> target architecture unless explicitly marked as P1.
+> `PaperNote`). P0 and P1 are complete; P2 through P8 are planned. The
+> multi-agent, reproduction, memory, MCP, API, security, evaluation, and UI
+> elements below are target architecture unless a table marks them complete.
 
 For the current implementation in Chinese, see
 [architecture/overview.md](architecture/overview.md). For P1 decisions and
 concrete commands, see [P1-DESIGN-RATIONALE.md](P1-DESIGN-RATIONALE.md) and
-[P1-TECHNICAL-REFERENCE.md](P1-TECHNICAL-REFERENCE.md).
+[P1-TECHNICAL-REFERENCE.md](P1-TECHNICAL-REFERENCE.md). The authoritative
+phase boundaries and completion rules are in the [P0-P8 Roadmap](ROADMAP.md).
 
 ---
 
@@ -28,9 +30,21 @@ ReproForge addresses the **Reproducibility Crisis** in computer science
 research. The current P1 release provides a working paper-reading vertical
 slice; the complete multi-agent pipeline is the planned end state.
 
-**Six specialized AI agents** collaborate to read papers, extract
+The target system uses **six specialized AI agents** to read papers, extract
 algorithms, verify math, generate runnable code, execute experiments in
 sandboxed environments, and compare results against claimed metrics.
+
+| Phase | Status | Architectural responsibility |
+|-------|--------|------------------------------|
+| P0 | Complete | Core types, ReAct lifecycle, provider contract, tests, CI, docs, packaging |
+| P1 | Complete | PDF/arXiv ingestion, chunking, PaperReader, PaperNote, pipeline, CLI |
+| P2 | Planned | Methodologist plus source-bound evidence, equation capture status, raw claim drafts, and `MethodAnalysis` |
+| P3 | Planned | CodeForger bundles and minimally safe experiment execution |
+| P4 | Planned | MathChecker, claim/metric alignment, Verifier reports |
+| P5 | Planned | Artifact repository, memory, knowledge graph, SurveyScribe |
+| P6 | Planned | Application service, MCP, FastAPI jobs/SSE, React workbench |
+| P7 | Planned | Identity, policy, guardrails, execution hardening, audit |
+| P8 | Planned | Benchmarks, OpenTelemetry, cost tracking, release scorecards |
 
 ---
 
@@ -48,8 +62,8 @@ graph TB
     end
 
     subgraph "Agent Runtime"
-        CORE[Agent Core<br/>ReAct & Plan-Execute Loops]
-        MA[Multi-Agent Orchestrator<br/>Handoff / Delegate / Broadcast]
+        CORE[Agent Core<br/>P0 ReAct Runtime]
+        MA[Target Orchestration<br/>Handoff / Delegate / Broadcast]
     end
 
     subgraph "Six Specialized Agents"
@@ -93,12 +107,12 @@ graph TB
 ### Layer Architecture (Dependency Direction: Top → Bottom)
 
 ```
-Layer 6: Web UI (React)
-Layer 5: API Gateway (FastAPI)
-Layer 4: Agent Pipeline (6 Agents + Orchestrator)
-Layer 3: Domain Services (paper parsing, reproduction engine)
-Layer 2: Infrastructure (memory, knowledge graph, MCP, tools)
-Layer 1: Core (types, base agent, LLM provider abstraction)
+Layer 6: Web UI (React)                                      [P6 planned]
+Layer 5: API Gateway (FastAPI)                               [P6 planned]
+Layer 4: Agent Pipeline (specialists + orchestration)         [P1 partial; P2-P6 planned]
+Layer 3: Domain Services (paper parsing, reproduction)        [P1 partial; P2-P4 planned]
+Layer 2: Infrastructure (artifact, memory, graph, MCP, tools) [P5-P6 planned]
+Layer 1: Core (types, base agent, provider abstraction)       [P0 complete]
 ```
 
 Lower layers never depend on upper layers (Dependency Inversion).
@@ -109,29 +123,31 @@ Lower layers never depend on upper layers (Dependency Inversion).
 
 ### 3.1 Agent Roles & Responsibilities
 
-| Agent | Input | Output | Key Responsibility |
-|-------|-------|--------|-------------------|
-| **PaperReader** | PDF / arXiv ID | Structured notes + layered summaries | Parse, chunk, and summarize academic papers |
-| **Methodologist** | PaperReader output | Algorithm pseudocode + architecture descriptions | Extract methods, architectures, training configs |
-| **MathChecker** | Extracted formulas | Derivation validation report | Cross-check formula consistency and derivation steps |
-| **CodeForger** | Methodology analysis | Runnable PyTorch/TensorFlow code | Translate algorithms into production-ready models |
-| **Experimentor** | Generated code | Training/evaluation records (MLflow) | Execute code in Docker sandboxes with experiment tracking |
-| **Verifier** | Experiment results + paper claims | Reproduction fidelity report | Compare reproduced metrics against claimed values |
+| Agent | Phase/status | Input | Output | Key responsibility |
+|-------|--------------|-------|--------|--------------------|
+| **PaperReader** | P1 complete | PDF / arXiv ID | `PaperNote` | Parse, chunk, and summarize papers with traceable source context |
+| **Methodologist** | P2 planned | `Paper` + optional `PaperNote` | `MethodAnalysis` + evidence/equation/claim drafts | Extract methods, architectures, training configs, and evaluation protocols without inventing missing source content |
+| **CodeForger** | P3 planned | `MethodAnalysis` | `ReproductionBundle` | Generate auditable source, configs, dependencies, and tests |
+| **Experimentor** | P3 planned | `ReproductionBundle` | `ExperimentRun` | Execute dry-run/build/run steps in a minimally safe sandbox |
+| **MathChecker** | P4 planned | Equations + P2 evidence | `MathCheckReport` | Check symbols, dimensions, and derivation gaps |
+| **Verifier** | P4 planned | Claims + `ExperimentRun` | `VerificationReport` | Align metrics/datasets/splits and compare observations with claims |
 
 ### 3.2 Execution Modes
 
 | Mode | Strategy | When to Use |
 |------|----------|------------|
-| **ReAct** | Think → Act → Observe → Repeat | Exploratory tasks (paper reading, open-ended analysis) |
-| **Plan-Execute** | Plan → Execute Steps Sequentially | Deterministic pipelines (code generation, experiment execution) |
+| **ReAct** | Think → Act → Observe → Repeat | Implemented in P0 and used by P1 PaperReader |
+| **Plan-Execute style** | Plan → Execute Steps Sequentially | Planned for P3 code generation and experiment execution |
 
 ### 3.3 Inter-Agent Communication
 
 | Protocol | Semantics | Example |
 |----------|-----------|---------|
-| **Handoff** | Full context transfer | PaperReader → Methodologist |
-| **Delegate** | Subtask assignment with result collection | Orchestrator → multiple PaperReaders |
-| **Broadcast** | Notify all agents | Paper update or citation change notification |
+| **Handoff** | Full context transfer | Target protocol; PaperReader → Methodologist |
+| **Delegate** | Subtask assignment with result collection | Target protocol; orchestrator → workers |
+| **Broadcast** | Notify interested agents | Target protocol; artifact or citation update |
+
+These communication protocols are design vocabulary, not P1 public APIs.
 
 ### 3.4 Design Philosophy: Why Not LangChain?
 
@@ -146,45 +162,44 @@ chaining LLM calls. Building a custom agent framework provides:
 
 ---
 
-## 4. Data Flow: The Reproduction Pipeline
+## 4. Target Data Flow: The Reproduction Pipeline
 
 ```
 Paper PDF
     │
     ▼
 ┌─────────────┐
-│ PaperReader  │  Parse sections → layered summaries
+│ PaperReader  │  P1 complete: parse sections → PaperNote
 └──────┬──────┘
        │
        ▼
 ┌─────────────┐
-│Methodologist│  Extract: algorithms, architectures, hyperparams, datasets
+│Methodologist│  P2 planned: MethodAnalysis + evidence
 └──────┬──────┘
        │
        ├──────────────────┐
        ▼                  ▼
 ┌─────────────┐   ┌─────────────┐
 │ CodeForger  │   │MathChecker  │
-│ model.py    │   │ formula      │
-│ train.py    │   │ validation   │
-│ config.yaml │   └─────────────┘
+│ P3 planned  │   │ P4 planned  │
+│ bundle      │   │ math report │
 └──────┬──────┘
        │
        ▼
 ┌─────────────┐
-│Experimentor │  Docker sandbox → train → evaluate → MLflow tracking
+│Experimentor │  P3 planned: isolated dry-run/build/run → ExperimentRun
 └──────┬──────┘
        │
        ▼
 ┌─────────────┐
-│  Verifier   │  Compare metrics → fidelity score → diagnosis → report
+│  Verifier   │  P4 planned: align claims/metrics → verification report
 └──────┬──────┘
        │
        ▼
-  📄 Reproduction Report (Markdown / LaTeX)
+  Reproduction Report (P4 planned)
 ```
 
-### Parallel Path: Literature Survey
+### Parallel Path: Literature Survey (P5 Planned)
 
 When searching for "all attention-variant papers on ImageNet," the
 knowledge graph supports graph-traversal queries alongside keyword
@@ -198,23 +213,24 @@ and vector search, enabling:
 
 ## 5. Technology Stack
 
-| Layer | Technology | Rationale |
-|-------|-----------|-----------|
-| **Lang** | Python 3.11+ | Rich ML ecosystem, async/await native support |
-| **Package Manager** | uv (Rust) | 10-100x faster than pip, `.python-version` support |
-| **Lint / Format** | ruff (Rust) | Single tool replaces flake8 + black + isort + pyupgrade |
-| **Type Check** | mypy strict | Type safety across async multi-module codebase |
-| **Build** | hatchling | PEP 621-compliant, zero-config |
-| **Test** | pytest + asyncio | FakeLLMProvider enables sub-second deterministic tests |
-| **Docs** | MkDocs Material | Markdown-first, Mermaid diagrams, auto API docs |
-| **CI/CD** | GitHub Actions | Matrix testing (3.11/3.12/3.13), auto docs deploy |
-| **Vector DB** | ChromaDB | Embeddable, `in_memory=True` for testing |
-| **Graph DB** | Neo4j + NetworkX | Production graph queries + lightweight dev mode |
-| **LLM** | OpenAI-compatible API | Supports OpenAI, DeepSeek, Qwen, vLLM, Ollama |
-| **Tracing** | OpenTelemetry | CNCF standard, vendor-neutral |
-| **Tracking** | MLflow | Experiment parameter/metric/model tracking |
-| **Config** | .env + pyproject.toml | Single-file tool configuration |
-| **Auth** | Apache 2.0 | Enterprise-friendly, patent protection |
+| Layer | Technology | Status | Rationale |
+|-------|------------|--------|-----------|
+| **Lang** | Python 3.11+ | Current | Rich ML ecosystem, async/await native support |
+| **Package Manager** | uv | Current | Fast, locked, reproducible environments |
+| **Lint / Format** | Ruff | Current | One fast tool for formatting and linting |
+| **Type Check** | mypy strict | Current | Type safety across async module boundaries |
+| **Build** | hatchling | Current | PEP 621-compliant package builds |
+| **Test** | pytest + asyncio | Current | Deterministic fake-provider and pipeline tests |
+| **Docs** | MkDocs Material | Current | Markdown-first docs and Mermaid diagrams |
+| **CI/CD** | GitHub Actions | Current | Multi-version quality, test, build, and docs jobs |
+| **LLM** | OpenAI-compatible HTTP | P1 complete | Supports OpenAI, DeepSeek, Qwen, vLLM, Ollama-compatible endpoints |
+| **Experiment sandbox/tracking** | Docker + MLflow | P3 planned | Isolated execution and structured run records |
+| **Artifact/vector storage** | local metadata + ChromaDB | P5 planned | Versioned facts plus rebuildable semantic index |
+| **Graph DB** | Neo4j + NetworkX | P5 planned | Production graph queries plus lightweight contract tests |
+| **API/MCP/UI** | FastAPI + MCP + React | P6 planned | Shared application service exposed to humans and machines |
+| **Security** | policy engine + guardrails | P7 planned | Identity, authorization, tool policy, audit, supply-chain gates |
+| **Tracing/evaluation** | OpenTelemetry + benchmark suite | P8 planned | Vendor-neutral telemetry and evidence-backed release gates |
+| **License** | Apache 2.0 | Current | Enterprise-friendly terms and explicit patent grant |
 
 ---
 
@@ -235,22 +251,22 @@ and vector search, enabling:
 ├── repro-forge/                   # Main project directory
 │   ├── repro_forge/               # Python package
 │   │   ├── core/                  #   types (29 classes) + base agent (ReAct loop)
-│   │   ├── agents/                #   Six specialized agents (P1-P4)
-│   │   ├── paper/                 #   PDF parsing + extraction pipeline
-│   │   ├── reproduction/          #   Code gen + experiment execution + verification
-│   │   ├── memory/                #   Three-tier memory (Working/Episodic/Semantic)
-│   │   ├── knowledge/             #   Neo4j knowledge graph
-│   │   ├── mcp/                   #   Model Context Protocol server/client
+│   │   ├── agents/                #   P1 PaperReader; P2-P5 agents planned
+│   │   ├── paper/                 #   P1 pipeline; P2 extraction planned
+│   │   ├── reproduction/          #   Empty namespace; P3-P4 planned
+│   │   ├── memory/                #   Empty namespace; P5 planned
+│   │   ├── knowledge/             #   Empty namespace; P5 planned
+│   │   ├── mcp/                   #   Empty namespace; P6 planned
 │   │   ├── providers/             #   Multi-LLM abstraction layer
-│   │   ├── tools/                 #   Tool registry + built-in tools
-│   │   ├── guardrails/            #   Input/output/tool safety
-│   │   ├── evaluation/            #   Benchmarks + LLM-as-Judge
-│   │   ├── observability/         #   OTel tracing + cost tracking
-│   │   └── api/                   #   FastAPI server (REST + SSE)
+│   │   ├── tools/                 #   Namespace; P1 tools remain inside PaperReader
+│   │   ├── guardrails/            #   Empty namespace; P7 planned
+│   │   ├── evaluation/            #   Empty namespace; P8 planned
+│   │   ├── observability/         #   Empty namespace; P8 planned
+│   │   └── api/                   #   Empty namespace; P6 planned
 │   │
 │   ├── tests/
 │   │   ├── conftest.py            #   FakeLLMProvider + FakeAgent + fixtures
-│   │   ├── unit/                  #   21 tests, <1s total, 89% coverage
+│   │   ├── unit/                  #   P0/P1 unit and contract coverage
 │   │   ├── integration/
 │   │   └── e2e/
 │   │
@@ -264,7 +280,7 @@ and vector search, enabling:
 │   ├── notebooks/                 # Jupyter notebook demos
 │   ├── pyproject.toml             # Single-source project config
 │   ├── Dockerfile                 # Multi-stage (builder + runtime)
-│   └── docker-compose.yml         # API + Neo4j + ChromaDB + Jaeger
+│   └── compose.future.yml         # P5/P8 service templates, not current runtime
 │
 ├── LICENSE                        # Apache 2.0
 ├── README.md                      # Umbrella workspace overview
@@ -277,5 +293,6 @@ and vector search, enabling:
 
 - **[P0-DESIGN-RATIONALE.md](P0-DESIGN-RATIONALE.md)** — Why each technology and architecture decision was made
 - **[P0-TECHNICAL-REFERENCE.md](P0-TECHNICAL-REFERENCE.md)** — Complete configuration, commands, and module reference
+- **[ROADMAP.md](ROADMAP.md)** — Authoritative P0-P8 scope, status, contracts, and quality gates
 - **[Development Workflow](development/workflow.md)** — Day-to-day development guide
 - **[Testing Strategy](development/testing.md)** — Test pyramid and FakeLLMProvider design

@@ -19,8 +19,9 @@ P1 在 P0 的 `BaseAgent`、Provider 契约、uv/ruff/mypy/pytest 工具链之�
 - `OpenAIProvider`：OpenAI、DeepSeek 和其他兼容 endpoint；
 - `PaperPipeline` 与 `repro-forge` CLI。
 
-Methodologist、代码生成、Docker 实验、Verifier、Memory、Knowledge Graph、
-MCP、FastAPI、前端、Guardrails 和 Evaluation 仍是 P2+ 规划。
+Methodologist 属于 P2；代码生成和 Docker 实验属于 P3；MathChecker/Verifier
+属于 P4；Memory/Knowledge Graph 属于 P5；MCP/FastAPI/前端属于 P6；
+Guardrails 属于 P7；Evaluation/Observability 属于 P8。它们当前均为规划。
 
 ## 先决条件
 
@@ -105,5 +106,5 @@ print(note.summary())
 
 - [P1 Design Rationale](../P1-DESIGN-RATIONALE.md)：为什么这样设计；
 - [P1 Technical Reference](../P1-TECHNICAL-REFERENCE.md)：模块、参数、命令和故障排查；
-- [Architecture Overview](../architecture/overview.md)：当前 P1 与 P2+ 的边界；
+- [Architecture Overview](../architecture/overview.md)：当前 P1 与 P2–P8 的边界；
 - [Testing](testing.md)：测试层次和验证基线。

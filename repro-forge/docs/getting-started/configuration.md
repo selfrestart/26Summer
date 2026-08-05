@@ -62,9 +62,26 @@ DEEPSEEK_MODEL=deepseek-chat
 Keep `.env` local. Use `.env.example` as the shareable template and rotate a
 credential immediately if it is pasted into an issue, log, commit, or chat.
 
-## P2+ reserved configuration
+## Reserved configuration by phase
 
 The deterministic examples and tests inject a fake provider and need no API
-key. `CHROMA_*`, `NEO4J_*`, `EXECUTION_*`, `MLFLOW_*`, `OTEL_*`, and server
-variables in `.env.example` are reserved for later phases; setting them does
-not enable those services in P1.
+key. Variables in `.env.example` are staged as follows:
+
+| Variables | Phase | Purpose |
+|-----------|-------|---------|
+| `EXECUTION_*`, `MLFLOW_*` | P3 | Sandbox execution and experiment records |
+| `CHROMA_*`, `NEO4J_*` | P5 | Rebuildable semantic and graph indexes, including explicit image references |
+| `SERVER_*`, CORS settings | P6 | FastAPI jobs/SSE service |
+| `OTEL_*`, `EVALUATION_*` | P8 | Telemetry, benchmarks, cost and release gates |
+
+Setting a reserved variable does not enable its service in P1. The corresponding
+code, tests, adapters, migrations, user entry point, and phase gate must all exist
+before the capability can be marked complete.
+
+Future local services use conservative defaults: P6 binds to `127.0.0.1` with one
+worker and CORS disabled; `compose.future.yml` binds database/telemetry ports to
+loopback and requires an explicit `NEO4J_PASSWORD`. P7 is still required before
+remote or multi-tenant exposure. It also requires explicit `NEO4J_IMAGE`,
+`CHROMA_IMAGE`, and `JAEGER_IMAGE` references rather than silently using
+`latest`. P5/P8 readiness reviews must record compatible versions and digests;
+P7 production gates require digest pinning, SBOMs, and image-policy checks.

@@ -18,6 +18,13 @@ platform remains the roadmap target.
     Developers continuing the implementation should also read the
     [P1 Implementation Guide](P1-IMPLEMENTATION-GUIDE.md).
 
+    The next planned phase is [P2 Evidence-Grounded Methodology
+    Extraction](P2-IMPLEMENTATION-PLAN.md). P2 will produce a validated
+    `MethodAnalysis` with source-bound evidence, explicit equation capture
+    status, and raw reported-claim drafts; code generation remains P3 and
+    knowledge-graph writes remain P5. P2 is still `Planned`: P2.0 contract and
+    fixture review must pass before the phase becomes `Ready`.
+
 ## What is ReproForge?
 
 ReproForge addresses the **reproducibility crisis** in computer science. P1
@@ -116,7 +123,7 @@ graph LR
     MC -.-> VF
 ```
 
-### 2. Memory
+### 2. Memory (P5 Planned)
 
 Three-tier memory architecture:
 
@@ -126,16 +133,18 @@ Three-tier memory architecture:
 | Episodic | ChromaDB vector store | Past paper analyses & experiment history |
 | Semantic | Neo4j knowledge graph | Cross-paper method relationships & benchmarks |
 
-### 3. Tools
+### 3. Tools (P1 Current, P2–P7 Planned Evolution)
 
-Agents use tools to interact with the world. All tools are standardized via
-the MCP (Model Context Protocol) and can be:
+P1 PaperReader owns three in-process read-only tools. Later phases expand the
+tool surface only after their domain contracts are stable:
 
-- **Built-in**: arXiv search, GitHub code search, PDF parsing, code execution
-- **MCP-hosted**: Any MCP-compatible server can provide tools
-- **Custom**: User-defined tools via a simple decorator API
+- **P2**: evidence lookup for methodology extraction
+- **P3/P4**: constrained execution and verification tools
+- **P5**: artifact, vector, graph, and survey retrieval
+- **P6**: MCP tools/resources backed by the shared application service
+- **P7**: identity, policy, approval, and audit wrappers
 
-### 4. Pipeline
+### 4. Pipeline (P2–P4 Planned)
 
 The reproduction pipeline is a directed workflow:
 
@@ -143,7 +152,7 @@ The reproduction pipeline is a directed workflow:
 Paper → Algorithm Extraction → Code Generation → Docker Execution → Verification → Report
 ```
 
-### 5. Evaluation
+### 5. Evaluation (P8 Planned)
 
 Built-in benchmarks measure agent performance:
 
@@ -158,15 +167,20 @@ Built-in benchmarks measure agent performance:
 |-------|--------|
 | P0 (Core and infrastructure) | ✅ Complete |
 | P1 (PaperReader) | ✅ Complete |
-| P2 (Methodologist) | 📋 Planned |
-| P3 (CodeForger + Execution) | 📋 Planned |
-| P4 (Verifier) | 📋 Planned |
-| P5 (Knowledge Graph + Survey) | 📋 Planned |
-| P6 (MCP + API + Frontend) | 📋 Planned |
-| P7 (Guardrails) | 📋 Planned |
-| P8 (Evaluation + Observability) | 📋 Planned |
+| P2 (Methodologist + evidence-grounded methodology extraction) | 📋 Planned |
+| P3 (Auditable code + sandboxed experiments) | 📋 Planned |
+| P4 (Math + claim/result verification) | 📋 Planned |
+| P5 (Memory + knowledge graph + survey) | 📋 Planned |
+| P6 (Application service + MCP + API + workbench) | 📋 Planned |
+| P7 (Security + guardrails + governance) | 📋 Planned |
+| P8 (Evaluation + observability + release gates) | 📋 Planned |
 
-[View the full roadmap on GitHub :octicons-arrow-right-24:](https://github.com/selfrestart/26Summer/tree/main/repro-forge#roadmap)
+[Read the P0-P8 roadmap :octicons-arrow-right-24:](ROADMAP.md)
+
+The roadmap is authoritative for the `Planned` → `Ready` → `In Progress` →
+`Complete` lifecycle, Definition of Ready, stage gates, and safe stopping
+milestones. A planned document, empty namespace, optional dependency, or future
+Compose service is not an implemented capability.
 
 ## Community
 

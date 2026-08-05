@@ -1,7 +1,7 @@
 # 发布产物流程
 
-P0 只验证 ReproForge 可以构建为标准 Python wheel 和 source distribution，
-不会自动发布到 PyPI、GHCR 或创建 GitHub Release。
+P0 建立了标准 Python wheel/source distribution 验证，当前 artifact 包含 P0/P1
+能力。工作流不会自动发布到 PyPI、GHCR 或创建 GitHub Release。
 
 ## Tag 触发流程
 
@@ -21,14 +21,15 @@ uv build
 uv run --isolated --no-project --with dist/*.whl repro-forge
 ```
 
-## P0 发布检查清单
+## 当前 P0/P1 发布检查清单
 
 - [ ] `make check` 通过
 - [ ] `uv build` 成功生成 wheel 和 source distribution
 - [ ] wheel 可以在隔离环境中安装并运行 CLI
 - [ ] `make docs` 严格构建成功
-- [ ] `make docker-run` 成功运行 P0 CLI
+- [ ] `make docker-run` 成功运行当前 CLI
 - [ ] 版本号在 `pyproject.toml`、`repro_forge/__init__.py` 和 `CITATION.cff` 中一致
 - [ ] CHANGELOG 已更新
 
-公开发布策略将在项目具备首个可用工作流后单独设计。
+P8 将在现有工程检查之上增加 benchmark、成本、性能、安全和 scorecard 发布门；
+在 P8 前不能用单一总分替代各阶段的阻断条件。

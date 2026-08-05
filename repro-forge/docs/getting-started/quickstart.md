@@ -87,8 +87,9 @@ Install the separate extra before using those methods:
 uv sync --locked --extra arxiv --group dev
 ```
 
-P2 method extraction, knowledge-graph writes, and full reproduction remain
-planned and are not part of P1.
+P2 evidence-grounded method extraction remains planned and is not part of P1.
+Knowledge-graph writes remain P5, while code generation and experiment
+execution begin in P3. See the [P2 Implementation Plan](../P2-IMPLEMENTATION-PLAN.md).
 
 ## Inspect the result
 

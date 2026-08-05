@@ -6,7 +6,7 @@ repository is an umbrella project: the Python package lives in
 `26Summer/repro-forge`, while the GitHub repository is `selfrestart/26Summer`.
 
 P0 supplies the runtime and quality tooling. P1 supplies the paper-reading
-vertical slice. P2+ folders and services are not required for the installation
+vertical slice. P2-P8 folders and services are not required for the installation
 below and are not enabled by it.
 
 ```bash
@@ -38,7 +38,7 @@ The extras are independent. Typical combinations are:
 | Search/download arXiv papers | `uv sync --locked --extra arxiv --group dev` |
 | Develop every declared integration | `uv sync --locked --extra all --group dev` |
 
-`all` installs declared dependencies, but it does not make P2+ features
+`all` installs declared dependencies, but it does not make P2-P8 features
 implemented. It only prepares the environment for future work.
 
 Verify the installation:

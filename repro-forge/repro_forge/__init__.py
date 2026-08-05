@@ -1,8 +1,9 @@
-"""ReproForge — Automated Paper Reading & Reproduction for CS Research.
+"""ReproForge paper-reading runtime.
 
-A multi-agent framework for computer science paper literature review
-and reproduction, featuring six specialized agents, MCP protocol
-integration, a three-tier memory system, and a knowledge graph engine.
+The current P0/P1 package provides the typed agent core, OpenAI-compatible
+provider boundary, PDF/arXiv paper models, PaperReader, pipeline, and CLI.
+Method extraction, reproduction, memory, MCP/API, security, and evaluation
+remain planned P2-P8 capabilities.
 """
 
 from __future__ import annotations

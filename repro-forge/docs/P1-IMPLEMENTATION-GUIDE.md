@@ -6,7 +6,7 @@
 > - [P1 设计论证](P1-DESIGN-RATIONALE.md)：解释为什么这样设计；
 > - [P1 技术参考](P1-TECHNICAL-REFERENCE.md)：列出 API、命令和配置速查。
 >
-> 本文只描述已经存在的 P1 代码。Methodologist、代码生成、实验执行、长期记忆、知识图谱、MCP、HTTP API 和前端仍属于 P2+ 规划。
+> 本文只描述已经存在的 P1 代码。Methodologist 属于 P2；代码生成/实验属于 P3；验证属于 P4；记忆/知识图谱属于 P5；MCP/HTTP API/前端属于 P6，均尚未实现。
 
 ---
 
@@ -627,7 +627,7 @@ P1 可宣布“完成”至少需要：
 - 步数耗尽仍能尝试最终总结；
 - OpenAI、DeepSeek、keyless local endpoint 的配置边界清楚；
 - 测试、静态检查、文档构建和包构建均通过；
-- 文档不把 P2+ 空包、compose 模板和架构图当作已实现功能。
+- 文档不把 P2–P8 空包、compose 模板和架构图当作已实现功能。
 
 ---
 
@@ -670,4 +670,7 @@ P1 可宣布“完成”至少需要：
 - 新 tokenizer 作为 chunker 策略注入，不修改 `PaperChunk` 契约；
 - 新 provider 适配 `BaseProvider`，不要在 Agent 中分支判断厂商；
 - 新 Agent 复用 `BaseAgent` trace 和状态，不复制循环；
-- P2+ 功能只有在代码、测试、配置和文档同时具备时，才能从“规划”改为“已完成”。
+- P2–P8 功能只有在代码、测试、配置和文档同时具备时，才能从“规划”改为“已完成”。
+
+P2 的最新范围、schema 草案、工作包和完成定义见
+[P2 实施规划](P2-IMPLEMENTATION-PLAN.md)。

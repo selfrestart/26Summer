@@ -5,6 +5,10 @@
 > **读者**: 新加入的开发者、自己的操作备忘、Onboarding 文档
 >
 > **行文原则**: 每个配置 ← 路径 + 命令 + 输出 → 可复现的操作步骤
+>
+> **阶段边界**：本文保留 P0 工程基线，并同步记录当前 P1 能力和 P2–P8
+> 规划入口。P0、P1 已完成；空包、可选依赖和未来服务模板不表示 P2–P8
+> 已实现。统一状态以 [P0–P8 总体路线图](ROADMAP.md) 为准。
 
 ---
 
@@ -46,14 +50,14 @@
 │   ├── Makefile                       # 18 个命令目标
 │   ├── uv.lock                        # 锁定依赖精确版本
 │   ├── .python-version                # Python 3.13 锁定
-│   ├── .env.example                   # 环境变量模板（25 个字段）
+│   ├── .env.example                   # 当前能力与未来阶段的环境变量模板
 │   ├── .editorconfig                  # 跨 IDE 格式规范
 │   ├── .pre-commit-config.yaml        # Git hooks 配置
 │   ├── .gitignore                     # 子项目级忽略规则
 │   ├── .dockerignore
 │   │
 │   ├── Dockerfile                     # 多阶段构建（builder + runtime）
-│   ├── docker-compose.yml             # 全栈启动（API + Neo4j + ChromaDB + Jaeger）
+│   ├── compose.future.yml             # P5/P8 未来服务模板，不属于当前运行链路
 │   │
 │   ├── repro_forge/                   # Python 源码包
 │   │   ├── __init__.py                # v0.1.0
@@ -63,10 +67,10 @@
 │   │   │   └── base.py                # BaseAgent + ReAct 循环
 │   │   ├── providers/
 │   │   │   └── base.py                # BaseProvider + LLMRequest/Response
-│   │   ├── agents/                    # (P1) 六大专项 Agent
+│   │   ├── agents/                    # (P1) PaperReader；其余 Agent 按 P2-P5 规划
 │   │   ├── paper/                     # (P1) 论文解析管道
 │   │   ├── reproduction/              # (P3) 复现引擎
-│   │   ├── memory/                    # (P4) 记忆系统
+│   │   ├── memory/                    # (P5) 记忆系统
 │   │   ├── knowledge/                 # (P5) 知识图谱
 │   │   ├── mcp/                       # (P6) MCP 协议
 │   │   ├── guardrails/                # (P7) 安全护栏
@@ -113,8 +117,8 @@
 | Observation | `core/types.py::Observation` | 工具执行后的观察结果 |
 | Trace | `core/types.py::AgentTrace` | 单次 Agent 执行的完整记录 |
 | Provider | `providers/base.py::BaseProvider` | LLM 调用的统一抽象 |
-| Memory | `memory/` 模块 | 三阶记忆系统 |
-| Tool | `tools/` 模块 | Agent 可用的工具 |
+| Memory | `memory/` 模块 | P5 规划中的长期记忆；当前仅保留命名空间 |
+| Tool | PaperReader 内置只读工具 | P1 已实现；通用注册与 MCP 接口属于后续阶段 |
 
 ---
 
@@ -169,13 +173,20 @@ cp .env.example .env
 完整字段见 `.env.example`，关键字段：
 
 ```ini
-# 至少配置一个
-OPENAI_API_KEY=sk-...                  # OpenAI / DeepSeek / Qwen / vLLM / Ollama
-OPENAI_BASE_URL=https://api.openai.com/v1  # 默认；国产模型改这里
-ANTHROPIC_API_KEY=sk-ant-...           # Claude（可选）
+# 远程 Provider 至少配置一组；共享文档中保持凭据值为空
+OPENAI_API_KEY=
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o
+DEEPSEEK_API_KEY=
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+
+# 仅预留，当前没有 Anthropic Provider 实现
+ANTHROPIC_API_KEY=
+ANTHROPIC_MODEL=claude-sonnet-4-20250514
 
 # 执行后端
-EXECUTION_BACKEND=dryrun               # dryrun | docker | colab | ssh | vastai
+EXECUTION_BACKEND=dryrun               # P3 规划: dryrun | local-subprocess | docker
 
 # 日志
 LOG_LEVEL=INFO
@@ -372,23 +383,22 @@ dev = ["pytest>=8.2.0", "ruff>=0.5.0", ...]
 ```
 开发依赖组，通过 `uv sync --group dev` 安装。
 
-### 4.2 .env 字段说明（25 个环境变量）
+### 4.2 .env 字段说明（按阶段分组）
 
-| 分类 | 变量 | 说明 | 默认值 |
-|------|------|------|--------|
-| **LLM Provider** | `OPENAI_API_KEY` | OpenAI / 国产模型 API Key | — |
-| | `OPENAI_BASE_URL` | API 端点 | `https://api.openai.com/v1` |
-| | `OPENAI_MODEL` | 模型名称 | `gpt-4o` |
-| | `ANTHROPIC_API_KEY` | Claude API Key | — |
-| | `ANTHROPIC_MODEL` | Claude 模型 | `claude-sonnet-4-20250514` |
-| **Memory** | `CHROMA_PERSIST_DIR` | ChromaDB 持久化路径 | `./data/chroma` |
-| **KG** | `NEO4J_URI` | Neo4j 连接 | `bolt://localhost:7687` |
-| | `NEO4J_USER` / `NEO4J_PASSWORD` | 认证信息 | `neo4j`/`password` |
-| **Execution** | `EXECUTION_BACKEND` | 执行后端 | `dryrun` |
-| **MLflow** | `MLFLOW_TRACKING_URI` | 追踪服务地址 | `./mlruns` |
-| **OTel** | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP 端点 | `http://localhost:4317` |
-| **Server** | `SERVER_HOST` / `SERVER_PORT` | API 绑定 | `0.0.0.0:8000` |
-| **Evaluation** | `EVALUATION_MODEL` | 评测用模型 | `gpt-4o` |
+| 阶段 | 分类 | 变量 | 当前含义 |
+|------|------|------|----------|
+| P1 已实现 | OpenAI-compatible | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` | OpenAI 或兼容端点 |
+| P1 已实现 | DeepSeek | `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` | CLI 自动识别的 DeepSeek 配置 |
+| 预留 | Anthropic | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | 依赖已声明，当前没有对应 Provider 实现 |
+| P5 规划 | Memory/KG | `CHROMA_*`, `NEO4J_*` | 向量索引、知识图谱和显式镜像引用 |
+| P3 规划 | Execution | `EXECUTION_BACKEND`, `MLFLOW_TRACKING_URI` | dry-run/local fixture/Docker 执行和实验记录 |
+| 延后 | Remote execution | `SSH_*`, `COLAB_*`, `VASTAI_*` | P3 首批不实现，变量存在不表示 adapter 可用 |
+| P6 规划 | API | `SERVER_*`, `ENABLE_CORS`, `ALLOWED_ORIGINS` | FastAPI 服务配置 |
+| P8 规划 | Observability/Evaluation | `OTEL_*`, `LOG_LEVEL`, `EVALUATION_*` | 遥测、成本和评测配置 |
+
+`.env.example` 中出现某个变量，只表示为对应阶段预留了统一命名，不表示消费该
+变量的模块已经实现。P1 的真实模型调用可以只配置 `DEEPSEEK_API_KEY`，不要求
+同时提供 OpenAI key。
 
 ### 4.3 .pre-commit-config.yaml
 
@@ -519,12 +529,12 @@ class BaseProvider(ABC):
 | 模块 | P0 状态 | P1-P8 规划 |
 |------|---------|-----------|
 | `agents/` | P1：`PaperReader` | P2-P4：其余专项 Agent |
-| `paper/` | P1：PDF/arXiv 解析、分块、`PaperPipeline` | P2：方法抽取与更丰富的论文服务 |
+| `paper/` | P1：PDF/arXiv 解析、分块、`PaperPipeline` | P2：带原文证据的方法、架构、训练和评价协议抽取 |
 | `reproduction/` | 空包 | P3-P4：复现引擎 |
-| `memory/` | 空包 | P4：三阶记忆系统 |
+| `memory/` | 空包 | P5：版本化 artifact、Episodic/Semantic memory |
 | `knowledge/` | 空包 | P5：知识图谱 |
 | `mcp/` | 空包 | P6：MCP Server/Client |
-| `tools/` | 空包 | P2：工具注册 + 内置工具 |
+| `tools/` | 空包 | P2 先复用/抽取论文只读 evidence 工具；通用工具注册与 MCP 保留到后续阶段 |
 | `guardrails/` | 空包 | P7：安全护栏 |
 | `evaluation/` | 空包 | P8：评测框架 |
 | `observability/` | 空包 | P8：OTel + 成本追踪 |
@@ -685,62 +695,59 @@ $ make test-cov
 
 ## 第八章　部署
 
-### 8.1 Dockerfile 详解
+### 8.1 当前 Dockerfile
 
-两阶段构建：
-
-```
-Stage 1: builder（python:3.12-slim）
-  ├── 安装系统依赖（build-essential）
-  ├── 安装 Python 依赖（.\[all\] + uvicorn）
-  └── 导出给 runtime
-
-Stage 2: runtime（python:3.12-slim）
-  ├── 安装最小系统依赖（libgl1, curl）
-  ├── 从 builder 复制已装包
-  ├── 复制应用代码
-  ├── 创建非 root 用户 reproforge
-  ├── EXPOSE 8000
-  ├── HEALTHCHECK curl http://localhost:8000/health
-  └── ENTRYPOINT uvicorn repro_forge.api.app:app
-```
-
-### 8.2 docker-compose 服务清单
-
-| 服务 | 端口 | 用途 |
-|------|------|------|
-| `api` | 8000 | ReproForge API 服务 |
-| `neo4j` | 7474 (HTTP) / 7687 (Bolt) | 知识图谱数据库 |
-| `chroma` | 8001 | 向量数据库 |
-| `jaeger` | 16686 (UI) / 4317 (OTLP gRPC) / 4318 (OTLP HTTP) | 分布式追踪 |
-
-### 8.3 本地启动与关闭
+当前 `Dockerfile` 是 Python 3.13 两阶段**包镜像**：builder 构建 wheel，runtime
+安装 wheel、切换到非 root 用户，并以 `repro-forge` CLI 为入口。它没有启动
+FastAPI、Neo4j、ChromaDB 或 Jaeger，也不代表 P3 实验沙箱已经实现。
 
 ```bash
-# 启动全部服务
-cd repro-forge
-docker compose up -d
-
-# 查看状态
-docker compose ps
-
-# 停止
-docker compose down
-
-# 停止 + 清理数据卷
-docker compose down -v
+make docker-build
+docker run --rm repro-forge:p0 --version
+docker run --rm repro-forge:p0 capabilities
 ```
 
-### 8.4 数据持久化
+镜像 tag 中的 `p0` 是现有 Makefile 的历史命名；镜像实际打包当前工作树中的
+P0/P1 Python 包。P3 实验镜像和 P6 API 镜像必须在对应阶段单独设计。
 
-| 数据 | Volume 名称 | 宿主机路径 |
-|------|-----------|----------|
-| Neo4j 图数据 | `neo4j-data` | Docker 管理 |
-| Neo4j 日志 | `neo4j-logs` | Docker 管理 |
-| ChromaDB 向量 | `chroma-data` | Docker 管理 |
-| 应用数据 | 绑定挂载 | `./data:/app/data` |
-| 应用输出 | 绑定挂载 | `./outputs:/app/outputs` |
-| MLflow | 绑定挂载 | `./mlruns:/app/mlruns` |
+### 8.2 `compose.future.yml` 服务模板
+
+| 服务 | 所属阶段 | 端口 | 用途 |
+|------|----------|------|------|
+| `neo4j` | P5 | 7474 / 7687 | 知识图谱索引 |
+| `chroma` | P5 | 8001 | 向量索引 |
+| `jaeger` | P8 | 16686 / 4317 / 4318 | OpenTelemetry trace 后端 |
+
+该文件不包含 API 服务，且不在 P0/P1 默认启动路径中。服务镜像存在不代表应用
+adapter、schema、迁移、健康检查集成或备份恢复已经完成。
+
+### 8.3 显式启动未来服务模板
+
+先在本地 `.env` 设置非默认的 `NEO4J_PASSWORD`，并显式设置 `NEO4J_IMAGE`、
+`CHROMA_IMAGE` 和 `JAEGER_IMAGE`。`compose.future.yml` 不提供 fallback 密码或
+`latest` 镜像，且所有端口仅绑定 `127.0.0.1`；这仍不等价于 P7 生产安全。
+P5/P8 准入评审必须记录兼容版本和 digest；P7 生产门还要求 digest 固定、SBOM
+和镜像策略检查。
+
+```bash
+cd repro-forge
+docker compose -f compose.future.yml up -d
+docker compose -f compose.future.yml ps
+docker compose -f compose.future.yml down
+```
+
+除非明确要丢弃 P5 索引数据，不要执行带 `-v` 的关闭命令。当前 P1 阅读流程
+不需要启动这些服务。
+
+### 8.4 未来持久化边界
+
+| 数据 | 阶段 | 计划中的事实源/索引角色 |
+|------|------|------------------------|
+| 版本化 artifact | P5 | 事实源；保存 P1–P4 JSON、报告、bundle 和 run manifest |
+| ChromaDB | P5 | 可重建的语义索引，不作为事实源 |
+| Neo4j/NetworkX | P5 | 可重建的关系索引，边必须保留 provenance |
+| 实验输出 | P3 | 由 `ExperimentRun`/artifact manifest 追踪 |
+| Trace/metrics/cost | P8 | 遥测与发布证据，不替代领域 artifact |
 
 ---
 
