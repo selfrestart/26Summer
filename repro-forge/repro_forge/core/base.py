@@ -6,9 +6,11 @@ that all specialized agents inherit from.
 
 from __future__ import annotations
 
+import asyncio
 from abc import ABC
 from abc import abstractmethod
 from collections.abc import AsyncIterator
+from contextlib import suppress
 from datetime import UTC
 from datetime import datetime
 
@@ -98,43 +100,58 @@ class BaseAgent(ABC):
             agent_type=self.config.agent_type,
         )
 
+        result: TaskResult | None = None
         try:
-            await self.setup()
-            step_limit = min(self.config.max_steps, task.max_steps)
+            async with asyncio.timeout(task.deadline_seconds):
+                await self.setup()
+                step_limit = min(self.config.max_steps, task.max_steps)
 
-            for step_index in range(step_limit):
-                # Think
-                self._state = AgentState.THINKING
-                thought = await self.think(task)
-                step = TraceStep(
-                    step_index=step_index,
-                    thought=thought,
-                )
+                for step_index in range(step_limit):
+                    # Think
+                    self._state = AgentState.THINKING
+                    thought = await self.think(task)
+                    step = TraceStep(
+                        step_index=step_index,
+                        thought=thought,
+                    )
 
-                # Act
-                self._state = AgentState.ACTING
-                action = await self.act(thought)
-                step.action = action
+                    # Act
+                    self._state = AgentState.ACTING
+                    action = await self.act(thought)
+                    step.action = action
 
-                # Observe
-                self._state = AgentState.OBSERVING
-                observation = await self.observe(action)
-                step.observation = observation
+                    # Observe
+                    self._state = AgentState.OBSERVING
+                    observation = await self.observe(action)
+                    step.observation = observation
 
-                self._trace.steps.append(step)
+                    self._trace.steps.append(step)
 
-                # Decide whether to continue
-                if await self.should_stop(observation):
-                    break
+                    # Decide whether to continue
+                    if await self.should_stop(observation):
+                        break
 
-            self._state = AgentState.DONE
-            result = await self.finalize(task)
-            return result
+                self._state = AgentState.DONE
+                result = await self.finalize(task)
 
+        except TimeoutError:
+            self._state = AgentState.ERROR
+            result = TaskResult(
+                task_id=task.id,
+                status=TaskStatus.FAILED,
+                error_message=(
+                    "Task deadline exceeded"
+                    + (
+                        f" after {task.deadline_seconds:g} seconds"
+                        if task.deadline_seconds is not None
+                        else ""
+                    )
+                ),
+                trace=self._trace,
+            )
         except Exception as exc:
             self._state = AgentState.ERROR
-            self._trace.final_state = self._state
-            return TaskResult(
+            result = TaskResult(
                 task_id=task.id,
                 status=TaskStatus.FAILED,
                 error_message=str(exc),
@@ -143,7 +160,21 @@ class BaseAgent(ABC):
         finally:
             self._trace.final_state = self._state
             self._trace.end_time = datetime.now(UTC)
-            await self.teardown()
+            # Cleanup must never replace the result (or the original
+            # exception-to-failure conversion) produced by the task.
+            with suppress(Exception):
+                await self.teardown()
+
+        if result is None:
+            # Defensive fallback for an overridden finalize() that returns
+            # unexpectedly without producing a TaskResult.
+            return TaskResult(
+                task_id=task.id,
+                status=TaskStatus.FAILED,
+                error_message="Agent did not produce a task result",
+                trace=self._trace,
+            )
+        return result
 
     # ------------------------------------------------------------------
     # Abstract methods — subclasses MUST implement
@@ -185,31 +216,35 @@ class BaseAgent(ABC):
         )
 
         try:
-            await self.setup()
-            step_limit = min(self.config.max_steps, task.max_steps)
+            async with asyncio.timeout(task.deadline_seconds):
+                await self.setup()
+                step_limit = min(self.config.max_steps, task.max_steps)
 
-            for step_index in range(step_limit):
-                self._state = AgentState.THINKING
-                step = TraceStep(step_index=step_index)
+                for step_index in range(step_limit):
+                    self._state = AgentState.THINKING
+                    step = TraceStep(step_index=step_index)
 
-                step.thought = await self.think(task)
-                self._state = AgentState.ACTING
+                    step.thought = await self.think(task)
+                    self._state = AgentState.ACTING
 
-                step.action = await self.act(step.thought)
-                self._state = AgentState.OBSERVING
+                    step.action = await self.act(step.thought)
+                    self._state = AgentState.OBSERVING
 
-                step.observation = await self.observe(step.action)
-                self._trace.steps.append(step)
-                yield step
+                    step.observation = await self.observe(step.action)
+                    self._trace.steps.append(step)
+                    yield step
 
-                if await self.should_stop(step.observation):
-                    break
+                    if await self.should_stop(step.observation):
+                        break
 
-            self._state = AgentState.DONE
+                self._state = AgentState.DONE
         except Exception:
             self._state = AgentState.ERROR
             raise
         finally:
             self._trace.final_state = self._state
             self._trace.end_time = datetime.now(UTC)
-            await self.teardown()
+            # Do not let cleanup errors replace a stream error or a yielded
+            # trace. Streaming execution errors are intentionally propagated.
+            with suppress(Exception):
+                await self.teardown()

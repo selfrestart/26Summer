@@ -6,8 +6,8 @@
 >
 > **行文原则**: 每个配置 ← 路径 + 命令 + 输出 → 可复现的操作步骤
 >
-> **阶段边界**：本文保留 P0 工程基线，并同步记录当前 P1 能力和 P2–P8
-> 规划入口。P0、P1 已完成；空包、可选依赖和未来服务模板不表示 P2–P8
+> **阶段边界**：本文保留 P0 工程基线，并同步记录当前 P1/P2 能力和 P3–P8
+> 规划入口。P0、P1、P2 已完成；空包、可选依赖和未来服务模板不表示 P3–P8
 > 已实现。统一状态以 [P0–P8 总体路线图](ROADMAP.md) 为准。
 
 ---
@@ -67,8 +67,8 @@
 │   │   │   └── base.py                # BaseAgent + ReAct 循环
 │   │   ├── providers/
 │   │   │   └── base.py                # BaseProvider + LLMRequest/Response
-│   │   ├── agents/                    # (P1) PaperReader；其余 Agent 按 P2-P5 规划
-│   │   ├── paper/                     # (P1) 论文解析管道
+│   │   ├── agents/                    # P1 PaperReader；P2 Methodologist
+│   │   ├── paper/                     # P1 解析/阅读；P2 evidence/extractor
 │   │   ├── reproduction/              # (P3) 复现引擎
 │   │   ├── memory/                    # (P5) 记忆系统
 │   │   ├── knowledge/                 # (P5) 知识图谱
@@ -524,17 +524,17 @@ class BaseProvider(ABC):
 
 **LLMResponse 字段**：`content`, `model`, `finish_reason`, `usage`, `raw`
 
-### 5.5-5.14 模块概览（P1 已实现，P2-P8 待实现）
+### 5.5-5.14 模块概览（P1/P2 已实现，P3-P8 待实现）
 
 | 模块 | P0 状态 | P1-P8 规划 |
 |------|---------|-----------|
-| `agents/` | P1：`PaperReader` | P2-P4：其余专项 Agent |
-| `paper/` | P1：PDF/arXiv 解析、分块、`PaperPipeline` | P2：带原文证据的方法、架构、训练和评价协议抽取 |
+| `agents/` | P1：`PaperReader`；P2：`Methodologist` | P3-P4：其余专项 Agent |
+| `paper/` | P1：PDF/arXiv 解析、分块、`PaperPipeline`；P2：`MethodologyPipeline` 与 evidence view | P3：代码与实验 |
 | `reproduction/` | 空包 | P3-P4：复现引擎 |
 | `memory/` | 空包 | P5：版本化 artifact、Episodic/Semantic memory |
 | `knowledge/` | 空包 | P5：知识图谱 |
 | `mcp/` | 空包 | P6：MCP Server/Client |
-| `tools/` | 空包 | P2 先复用/抽取论文只读 evidence 工具；通用工具注册与 MCP 保留到后续阶段 |
+| `tools/` | 空包 | P2 只读 evidence 工具位于 `paper/extractor`；通用注册与 MCP 保留到后续阶段 |
 | `guardrails/` | 空包 | P7：安全护栏 |
 | `evaluation/` | 空包 | P8：评测框架 |
 | `observability/` | 空包 | P8：OTel + 成本追踪 |

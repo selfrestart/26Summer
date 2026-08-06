@@ -13,8 +13,50 @@ note = await reader.read(paper)
 ```
 
 The reader exposes deterministic local tools for listing sections, reading a
-section, and searching paper text. P2 agents such as `Methodologist` are not
-implemented yet.
+section, and searching paper text.
+
+## `Methodologist`
+
+`Methodologist` is the P2 ReAct agent that extracts evidence-grounded
+methodology from a `Paper`, optionally using a `PaperNote` as context hints:
+
+```python
+from repro_forge.agents import Methodologist
+from repro_forge.paper.extractor import PaperEvidenceView
+
+view = PaperEvidenceView(paper)
+methodologist = Methodologist(provider=my_provider)
+analysis = await methodologist.analyze(view, paper_note=note)  # note optional
+```
+
+`analyze()` returns a validated `MethodAnalysis`. Evidence-bearing method,
+configuration, evaluation, and reported-claim fields carry an `EvidenceRef`
+(source_hash, section_id, quote, status) so downstream reproduction inputs trace
+back to the original paper. Schema/evidence errors trigger one repair attempt;
+a second failure raises `RuntimeError` instead of producing a fake analysis.
+The constructor requires a provider and raises `ValueError` immediately when it
+is omitted.
+
+### Methodologist configuration defaults
+
+| Field | Default |
+|---|---|
+| `agent_type` | `methodologist` |
+| `model` | Injected provider model unless explicitly set in `AgentConfig` |
+| `max_steps` | `15` |
+| `temperature` | `0.0` |
+
+### Methodologist tools
+
+| Tool | Purpose |
+|---|---|
+| `list_sections` | View all section titles |
+| `read_section(title, chunk_index=0)` | Read bounded original text |
+| `search_paper(query)` | Locate hyperparameters/metrics/formulas |
+| `get_paper_note` | Get P1 reading-note context hints |
+
+Parallel native tool calls are fully answered before another assistant request,
+including when a batch reaches the configured action-step boundary.
 
 ## Configuration defaults
 

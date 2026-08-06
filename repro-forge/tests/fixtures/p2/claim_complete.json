@@ -1,0 +1,23 @@
+{
+  "schema_version": "p2.v1",
+  "paper_id": "fixture.p2.claim",
+  "title": "Complete Claim Fixture",
+  "problem_statement": "Test reported claim preservation.",
+  "evaluation_protocol": {
+    "reported_claims": [
+      {
+        "claim_id": "claim_accuracy",
+        "dataset": "FixtureSet",
+        "split": "validation",
+        "metric_name": "Top-1 Accuracy",
+        "reported_value": "0.912",
+        "raw_text": "Top-1 accuracy is 0.912 on the validation split.",
+        "unit": "fraction",
+        "scale": "0-1",
+        "direction": "higher_is_better",
+        "aggregation": "mean",
+        "status": "verified"
+      }
+    ]
+  }
+}

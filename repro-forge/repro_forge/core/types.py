@@ -228,7 +228,7 @@ class TaskSpec(BaseModel):
     input: dict[str, Any] = Field(default_factory=dict)
     agent_type: AgentType | None = None
     parent_task_id: str | None = None
-    deadline_seconds: float | None = None
+    deadline_seconds: float | None = Field(default=None, gt=0.0)
     max_steps: int = 15
     metadata: dict[str, Any] = Field(default_factory=dict)
 

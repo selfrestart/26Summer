@@ -1,8 +1,8 @@
 # ReproForge P0–P8 总体路线图
 
-> **更新时间**：2026-08-05
+> **更新时间**：2026-08-06
 >
-> **当前状态**：P0、P1 已完成；P2–P8 已规划但尚未实现
+> **当前状态**：P0、P1、P2 已完成；P3–P8 已规划但尚未实现
 >
 > **状态判定原则**：目录、依赖声明、架构图和 `compose.future.yml` 不构成功能完成。只有代码、测试、用户入口、文档和阶段验收全部通过，阶段才能标记为 Complete。
 
@@ -30,7 +30,7 @@ flowchart LR
 |---|---|---|---|
 | P0 | Complete | 项目如何可靠开发、测试、构建和发布？ | Core types、BaseAgent、Provider contract、CI/docs/package |
 | P1 | Complete | 如何把论文变成可追踪阅读笔记？ | `Paper`、`PaperChunk`、`PaperNote`、PaperPipeline、CLI |
-| P2 | Planned | 如何把方法学结论绑定到原文证据？ | `MethodAnalysis`、`EvidenceRef`、`EquationEvidence`、`ReportedClaimDraft` |
+| P2 | Complete | 如何把方法学结论绑定到原文证据？ | `MethodAnalysis`、`EvidenceRef`、`EquationEvidence`、`ReportedClaimDraft` |
 | P3 | Planned | 如何把方法转换为可审计代码并隔离执行？ | `ReproductionBundle`、`ExperimentSpec`、`ExperimentRun` |
 | P4 | Planned | 如何检查数学与复现结果是否支持论文声明？ | `MathCheckReport`、`VerificationReport`、复现报告 |
 | P5 | Planned | 如何跨会话沉淀、关联和综述研究知识？ | Memory records、Knowledge Graph、`SurveyReport` |
@@ -58,8 +58,9 @@ flowchart LR
 6. 阻断决策与非阻断决策分开记录，实施负责人和评审责任明确；
 7. 可安全停止的中间里程碑明确，停止时不会把部分能力标成 `Complete`。
 
-当前 P2 仍为 `Planned`：下一步是完成 P2.0 schema/evidence fixture 评审后转为
-`Ready`。P3–P8 不得在其前置条件未满足时提前转为 `Ready`。
+当前 P2 已通过 schema/evidence fixture、离线 Agent、公共 API/CLI、DeepSeek
+smoke 和完整阶段门，标记为 `Complete`。P3–P8 不得在其前置条件未满足时提前
+转为 `Ready`。
 
 ## 4. 跨阶段稳定契约
 
@@ -107,7 +108,7 @@ flowchart LR
 
 详见 [P1 实现手册](P1-IMPLEMENTATION-GUIDE.md)。
 
-### P2：证据化方法抽取（规划）
+### P2：证据化方法抽取（已完成）
 
 Methodologist 从 `Paper` 和可选 `PaperNote` 抽取算法、架构、训练配置与评价协议。
 关键声明通过带 source/section/quote hash 的 `EvidenceRef` 回到 canonical `Paper`；
@@ -115,7 +116,11 @@ Methodologist 从 `Paper` 和可选 `PaperNote` 抽取算法、架构、训练�
 保留 raw value/unit/split/status 的 `ReportedClaimDraft`。P2 不补造缺失公式，也不
 提前执行属于 P4 的数值规范化和可比性判断。
 
-详见 [P2 实施规划](P2-IMPLEMENTATION-PLAN.md)。
+交付：`MethodAnalysis`/`EvidenceRef`/`EquationEvidence`/`ReportedClaimDraft` schema、
+`PaperEvidenceView` 只读证据层、`Methodologist` Agent、`MethodologyPipeline`、
+`analyze-pdf`/`analyze-json` CLI 命令、离线示例。
+
+详见 [P2 设计论证](P2-DESIGN-RATIONALE.md) 和 [P2 技术参考](P2-TECHNICAL-REFERENCE.md)。
 
 ### P3：代码生成与隔离实验（规划）
 
@@ -221,6 +226,6 @@ fixture 和局部质量指标。P8 负责统一 manifest、统计、历史基线
 
 ## 12. 当前优先级
 
-当前唯一允许推进准入并在转为 `Ready` 后进入实现的下一阶段是 P2。P3–P8 的规划
+当前唯一允许推进准入并在转为 `Ready` 后进入实现的下一阶段是 P3。P4–P8 的规划
 用于冻结边界、减少返工，不表示可以绕过前置阶段并行宣称完成。若某个后续基础
 能力必须提前实现，只能作为前置阶段的最小内部组件，不能提前扩大阶段状态。

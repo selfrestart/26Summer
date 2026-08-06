@@ -9,7 +9,7 @@ PaperReader 当前内置三个进程内只读工具：`list_sections`、`read_se
 | 阶段 | 工具边界 | 状态 |
 |------|----------|------|
 | P1 | 论文章节列举、读取和全文搜索 | 已实现，进程内只读 |
-| P2 | 复用/抽取只读 evidence view，支持方法学证据定位 | 规划 |
+| P2 | `PaperEvidenceView` 只读 evidence view，支持方法学证据定位 | 已实现 |
 | P3 | 生成文件、静态检查、dry-run 和受限 sandbox backend | 规划，必须满足最低安全门 |
 | P4 | 公式、claim、metric 和 run artifact 查询 | 规划，默认只读 |
 | P5 | artifact、向量索引、知识图谱和 survey 检索 | 规划，写入必须保留 provenance |

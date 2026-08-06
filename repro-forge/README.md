@@ -5,7 +5,7 @@
 **Automated Paper Reading, Methodology Analysis & Reproduction for CS Research**
 
 [![CI](https://github.com/selfrestart/26Summer/actions/workflows/ci.yml/badge.svg)](https://github.com/selfrestart/26Summer/actions/workflows/ci.yml)
-[![Status](https://img.shields.io/badge/status-P1%20paper%20reading-green.svg)](#project-status)
+[![Status](https://img.shields.io/badge/status-P2%20methodology-green.svg)](#project-status)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-GitHub-blue)](https://github.com/selfrestart/26Summer/tree/main/repro-forge/docs)
@@ -30,18 +30,18 @@ ReproForge aims to become a multi-agent framework for reading, understanding, an
 
 ## Capabilities and Roadmap
 
-> **Capability boundary:** the table below includes roadmap targets. P0 and P1
+> **Capability boundary:** the table below includes roadmap targets. P0, P1 and P2
 > are implemented; P1 covers local PDF/arXiv ingestion, token-aware chunking,
 > the PaperReader agent, provider injection, and the `PaperPipeline`/CLI.
 > Phase status follows the [roadmap lifecycle](docs/ROADMAP.md#3-状态生命周期与实施准入).
-> P2 is still `Planned`; its P2.0 contract/fixture review must pass before it is
-> `Ready` for implementation.
+> P2 adds evidence-grounded methodology extraction through `MethodAnalysis` and
+> `MethodologyPipeline`; code generation and execution remain P3+ work.
 
 | Phase | Status | Capability |
 |-------|--------|------------|
 | **P0 Engineering Core** | Complete | Typed ReAct runtime, provider contract, deterministic tests, CI, docs, package and CLI image |
 | **P1 Paper Reading** | Complete | Local PDF/arXiv ingestion, token-aware chunking, PaperReader, `PaperNote`, pipeline and CLI |
-| **P2 Method Extraction** | Planned | Versioned `MethodAnalysis` with source-bound evidence, equation capture status and raw claim drafts |
+| **P2 Method Extraction** | Complete | Versioned `MethodAnalysis` with source-bound evidence, equation capture status and raw claim drafts |
 | **P3 Code and Experiments** | Planned | Auditable `ReproductionBundle`, dry-run and minimally safe sandbox execution |
 | **P4 Verification** | Planned | MathChecker, claim/metric alignment and `VerificationReport` |
 | **P5 Research Memory** | Planned | Versioned artifact repository, ChromaDB/Neo4j indexes and SurveyScribe |
@@ -111,7 +111,7 @@ deterministic provider and does not require a PDF or API key.
 ### Run a Full Reproduction
 
 > **Planned API:** reproduction is scheduled for P3/P4 and is not implemented
-> in the current P1 release. P2 first produces the evidence-grounded
+> in the current P2 release. P2 produces the evidence-grounded
 > `MethodAnalysis` consumed by P3.
 
 No copy-paste API is shown for this workflow because those imports do not exist
@@ -127,7 +127,7 @@ plans for proposed contracts and completion gates.
 ```mermaid
 flowchart LR
     INPUT["PDF / arXiv"] --> P1["P1 complete: Paper + PaperNote"]
-    P1 --> P2["P2 planned: MethodAnalysis"]
+    P1 --> P2["P2 complete: MethodAnalysis + evidence"]
     P2 --> P3["P3 planned: Bundle + ExperimentRun"]
     P3 --> P4["P4 planned: VerificationReport"]
     P1 --> P5["P5 planned: Memory / Graph / Survey"]
@@ -159,7 +159,7 @@ Full documentation is available in the repository's [docs directory](https://git
 |-------|--------|---------|
 | P0 | ✅ Complete | Core abstractions, tests, packaging, CI, docs build, Docker package image |
 | P1 | ✅ Complete | PaperReader, PDF/arXiv parsers, chunker, provider boundary, pipeline, CLI |
-| P2 | 📋 Planned | Methodologist, evidence-grounded method/architecture/training extraction |
+| P2 | ✅ Complete | Methodologist, evidence-grounded method/architecture/training extraction |
 | P3 | 📋 Planned | Auditable CodeForger bundles, dry-run and sandboxed experiment execution |
 | P4 | 📋 Planned | MathChecker, claim/metric alignment, Verifier and reproduction reports |
 | P5 | 📋 Planned | Versioned memory, knowledge graph and evidence-grounded surveys |

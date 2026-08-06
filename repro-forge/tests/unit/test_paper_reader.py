@@ -685,3 +685,25 @@ class TestPaperReader:
         assert observation.is_error
         assert "not found" in (observation.error or "").lower()
         assert reader._conversation[-1]["tool_call_id"] == "call_missing_section"
+
+    @pytest.mark.asyncio
+    async def test_invalid_final_json_is_a_failed_task(self) -> None:
+        provider = FakeLLMProvider(responses=["DONE\nnot-json"])
+        reader = PaperReader(
+            config=AgentConfig(agent_type=AgentType.PAPER_READER, max_steps=1),
+            provider=provider,
+        )
+
+        with pytest.raises(RuntimeError, match="Invalid PaperNote JSON"):
+            await reader.read(_make_test_paper())
+
+    @pytest.mark.asyncio
+    async def test_empty_final_object_is_not_published_as_a_note(self) -> None:
+        provider = FakeLLMProvider(responses=["DONE\n{}"])
+        reader = PaperReader(
+            config=AgentConfig(agent_type=AgentType.PAPER_READER, max_steps=1),
+            provider=provider,
+        )
+
+        with pytest.raises(RuntimeError, match="must not be empty"):
+            await reader.read(_make_test_paper())

@@ -269,4 +269,4 @@ uv sync --locked --extra pdf --group dev
 
 ### 想运行完整复现
 
-当前不能。P2 Methodologist、P3 CodeForger/Experimentor、P4 Verifier、P5 存储和 P6 服务层尚未交付；不要把 `compose.future.yml` 或空包目录当作可运行实现。
+当前不能。P3 CodeForger/Experimentor、P4 Verifier、P5 存储和 P6 服务层尚未交付；P2 Methodologist 已通过 `MethodologyPipeline` 提供；不要把 `compose.future.yml` 或空包目录当作可运行实现。

@@ -87,9 +87,9 @@ Install the separate extra before using those methods:
 uv sync --locked --extra arxiv --group dev
 ```
 
-P2 evidence-grounded method extraction remains planned and is not part of P1.
-Knowledge-graph writes remain P5, while code generation and experiment
-execution begin in P3. See the [P2 Implementation Plan](../P2-IMPLEMENTATION-PLAN.md).
+P2 evidence-grounded methodology extraction is available through
+`MethodologyPipeline`; knowledge-graph writes remain P5, while code generation
+and experiment execution begin in P3. See the [P2 technical reference](../P2-TECHNICAL-REFERENCE.md).
 
 ## Inspect the result
 

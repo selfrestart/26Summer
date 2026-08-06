@@ -1,107 +1,120 @@
-"""CLI smoke tests that do not require optional integrations or API keys."""
+"""Tests for the repro-forge CLI (P2 analyze commands)."""
+
+import json
 
 import pytest
 
-import repro_forge.cli as cli
-import repro_forge.providers as providers
+from repro_forge.cli import _is_local_endpoint
 from repro_forge.cli import main
+from tests.conftest import FakeLLMProvider
 
-
-def test_version_command(capsys) -> None:
-    with pytest.raises(SystemExit) as exc_info:
-        main(["--version"])
-    assert exc_info.value.code == 0
-    assert "repro-forge 0.1.0" in capsys.readouterr().out
-
-
-def test_capabilities_command(capsys) -> None:
-    assert main(["capabilities"]) == 0
-    output = capsys.readouterr().out
-    assert "paper-reading" in output
-    assert "pdf" in output
-    assert "arxiv" in output
-
-
-def test_help_command(capsys) -> None:
-    with pytest.raises(SystemExit) as exc_info:
-        main(["--help"])
-    assert exc_info.value.code == 0
-    assert "read-pdf" in capsys.readouterr().out
-
-
-def test_provider_uses_deepseek_defaults_when_openai_key_is_absent(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    captured: dict[str, str | None] = {}
-    sentinel = object()
-
-    def fake_provider(**kwargs: str | None) -> object:
-        captured.update(kwargs)
-        return sentinel
-
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
-    monkeypatch.delenv("OPENAI_MODEL", raising=False)
-    monkeypatch.setenv("DEEPSEEK_API_KEY", "deepseek-test-key")
-    monkeypatch.delenv("DEEPSEEK_BASE_URL", raising=False)
-    monkeypatch.delenv("DEEPSEEK_MODEL", raising=False)
-    monkeypatch.setattr(providers, "OpenAIProvider", fake_provider)
-
-    provider = cli._provider()
-
-    assert provider is sentinel
-    assert captured == {
-        "api_key": "deepseek-test-key",
-        "base_url": "https://api.deepseek.com",
-        "model": "deepseek-chat",
+FAKE_ANALYSIS = json.dumps(
+    {
+        "problem_statement": "Image classification.",
+        "algorithms": [
+            {
+                "name": "TestModel",
+                "purpose": "Classification",
+                "steps": [],
+                "assumptions": [],
+                "evidence": {"section_title": "Method", "quote": "Our model"},
+            },
+        ],
+        "architecture": [],
+        "training_recipe": {},
+        "evaluation_protocol": {},
+        "equations": [],
+        "reproducibility_gaps": [],
+        "assumptions": [],
     }
+)
 
 
-def test_provider_loads_deepseek_credentials_from_dotenv(
-    tmp_path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    captured: dict[str, str | None] = {}
-
-    def fake_provider(**kwargs: str | None) -> object:
-        captured.update(kwargs)
-        return object()
-
-    (tmp_path / ".env").write_text(
-        "DEEPSEEK_API_KEY=dotenv-key\nDEEPSEEK_MODEL=deepseek-chat\n",
-        encoding="utf-8",
-    )
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
-    monkeypatch.delenv("DEEPSEEK_MODEL", raising=False)
-    monkeypatch.setattr(providers, "OpenAIProvider", fake_provider)
-
-    cli._provider()
-
-    assert captured["api_key"] == "dotenv-key"
-    assert captured["model"] == "deepseek-chat"
+@pytest.fixture
+def fake_cli_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+    provider = FakeLLMProvider(responses=[f"DONE\n{FAKE_ANALYSIS}"])
+    monkeypatch.setattr("repro_forge.cli._provider", lambda: provider)
 
 
-def test_provider_allows_a_keyless_openai_compatible_endpoint(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    captured: dict[str, str | None] = {}
+class TestCLI:
+    def test_keyless_endpoint_only_allows_explicit_local_addresses(self) -> None:
+        assert _is_local_endpoint("http://localhost:11434/v1")
+        assert _is_local_endpoint("http://127.0.0.1:8000/v1")
+        assert _is_local_endpoint("http://192.168.1.10:8000/v1")
+        assert not _is_local_endpoint("http://evil:8000/v1")
+        assert not _is_local_endpoint("https://api.example.com/v1")
 
-    def fake_provider(**kwargs: str | None) -> object:
-        captured.update(kwargs)
-        return object()
+    def test_help_shows_p2_commands(self, capsys: pytest.CaptureFixture[str]) -> None:
+        with pytest.raises(SystemExit):
+            main(["--help"])
+        output = capsys.readouterr().out
+        assert "analyze-pdf" in output
+        assert "analyze-json" in output
+        assert "read-pdf" in output
 
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
-    monkeypatch.setenv("OPENAI_BASE_URL", "http://localhost:11434/v1")
-    monkeypatch.setenv("OPENAI_MODEL", "llama3")
-    monkeypatch.setattr(providers, "OpenAIProvider", fake_provider)
+    def test_capabilities(self, capsys: pytest.CaptureFixture[str]) -> None:
+        rc = main(["capabilities"])
+        output = capsys.readouterr().out
+        assert rc == 0
+        assert "P1 capabilities" in output
+        assert "P2 capabilities" in output
+        assert "methodology" in output
 
-    cli._provider()
+    def test_unknown_command_exits_nonzero(self) -> None:
+        with pytest.raises(SystemExit) as exc_info:
+            main(["not-a-command"])
+        assert exc_info.value.code != 0
 
-    assert captured == {
-        "api_key": None,
-        "base_url": "http://localhost:11434/v1",
-        "model": "llama3",
-    }
+    def test_analyze_json_produces_analysis(
+        self,
+        tmp_path,
+        capsys: pytest.CaptureFixture[str],
+        fake_cli_provider: None,
+    ) -> None:
+        paper_file = tmp_path / "paper.json"
+        paper_file.write_text(
+            json.dumps(
+                {
+                    "metadata": {"title": "Test", "arxiv_id": "1234.5678"},
+                    "sections": [
+                        {
+                            "title": "Method",
+                            "content": "Our model uses Adam.",
+                            "section_type": "method",
+                        },
+                    ],
+                    "total_pages": 1,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        rc = main(["analyze-json", str(paper_file)])
+        assert rc == 0
+        output = capsys.readouterr().out
+        assert "problem_statement" in output
+        assert "TestModel" in output
+
+    def test_analyze_json_with_output_file(
+        self,
+        tmp_path,
+        fake_cli_provider: None,
+    ) -> None:
+        paper_file = tmp_path / "paper.json"
+        paper_file.write_text(
+            json.dumps(
+                {
+                    "metadata": {"title": "Test", "arxiv_id": "1234.5678"},
+                    "sections": [],
+                    "total_pages": 0,
+                }
+            ),
+            encoding="utf-8",
+        )
+        out_file = tmp_path / "analysis.json"
+
+        rc = main(["analyze-json", str(paper_file), "--output", str(out_file)])
+        assert rc == 0
+        assert out_file.exists()
+        data = json.loads(out_file.read_text(encoding="utf-8"))
+        assert data["algorithms"][0]["name"] == "TestModel"

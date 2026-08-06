@@ -1,0 +1,16 @@
+{
+  "schema_version": "p2.v1",
+  "paper_id": "fixture.p2.equation",
+  "title": "Captured Equation Fixture",
+  "problem_statement": "Test equation capture.",
+  "equations": [
+    {
+      "equation_id": "eq_1",
+      "label": "(1)",
+      "raw_text": "y = Wx + b",
+      "normalized_text": "y=Wx+b",
+      "parse_status": "captured",
+      "symbol_hints": {"y": "output"}
+    }
+  ]
+}

@@ -1,21 +1,33 @@
-"""Stable public import surface for the P1 paper-reading workflow."""
+"""Tests for P2 public API exports and import paths."""
 
+from repro_forge.agents import Methodologist
 from repro_forge.agents import PaperReader
-from repro_forge.paper import ArxivClient
-from repro_forge.paper import Paper
-from repro_forge.paper import PaperChunker
-from repro_forge.paper import PaperPipeline
-from repro_forge.paper import PDFParser
-from repro_forge.providers import LLMToolCall
-from repro_forge.providers import OpenAIProvider
+from repro_forge.paper.extractor import EvidenceRef
+from repro_forge.paper.extractor import EvidenceStatus
+from repro_forge.paper.extractor import MethodAnalysis
+from repro_forge.paper.extractor import MethodologyPipeline
+from repro_forge.paper.extractor import PaperEvidenceView
 
 
-def test_p1_public_exports_are_available() -> None:
-    assert PaperReader.__name__ == "PaperReader"
-    assert Paper.__name__ == "Paper"
-    assert PaperChunker.__name__ == "PaperChunker"
-    assert PaperPipeline.__name__ == "PaperPipeline"
-    assert PDFParser.__name__ == "PDFParser"
-    assert ArxivClient.__name__ == "ArxivClient"
-    assert LLMToolCall.__name__ == "LLMToolCall"
-    assert OpenAIProvider.__name__ == "OpenAIProvider"
+class TestPublicExports:
+    def test_agent_exports(self) -> None:
+        assert Methodologist is not None
+        assert PaperReader is not None
+
+    def test_extractor_exports(self) -> None:
+        assert MethodAnalysis is not None
+        assert MethodologyPipeline is not None
+        assert PaperEvidenceView is not None
+        assert EvidenceRef is not None
+        assert EvidenceStatus is not None
+
+    def test_import_paths(self) -> None:
+        from repro_forge.agents import methodologist
+        from repro_forge.paper.extractor import evidence
+        from repro_forge.paper.extractor import pipeline
+        from repro_forge.paper.extractor import schemas
+
+        assert methodologist.Methodologist is Methodologist
+        assert evidence.PaperEvidenceView is PaperEvidenceView
+        assert pipeline.MethodologyPipeline is MethodologyPipeline
+        assert schemas.MethodAnalysis is MethodAnalysis

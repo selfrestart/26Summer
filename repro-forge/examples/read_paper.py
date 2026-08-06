@@ -52,6 +52,7 @@ class ExampleProvider(BaseProvider):
     def provider_name(self) -> str:
         return "example"
 
+
 SAMPLE_PAPER = Paper(
     metadata=PaperMetadata(
         title="Attention Is All You Need",

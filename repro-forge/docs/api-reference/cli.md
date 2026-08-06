@@ -9,6 +9,8 @@ repro-forge --version
 repro-forge capabilities
 repro-forge read-pdf <path> [--output <note.json>]
 repro-forge read-json <paper.json> [--output <note.json>]
+repro-forge analyze-pdf <path> [--paper-note <note.json>] [--read-first]
+repro-forge analyze-json <paper.json> [--paper-note <note.json>]
 ```
 
 | 命令 | 前置条件 | 输出 |
@@ -17,6 +19,8 @@ repro-forge read-json <paper.json> [--output <note.json>]
 | `capabilities` | 核心安装 | P1 能力清单 |
 | `read-pdf` | `pdf` + `openai` extra；远程 key 或本地 endpoint | `PaperNote` JSON |
 | `read-json` | `openai` extra；有效 `Paper` JSON；远程 key 或本地 endpoint | `PaperNote` JSON |
+| `analyze-pdf` | `pdf` + `openai` extra；可选 P1 note | `MethodAnalysis` JSON |
+| `analyze-json` | `openai` extra；有效 `Paper` JSON；可选 P1 note | `MethodAnalysis` JSON |
 
 ## Configuration loading
 

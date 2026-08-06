@@ -1,14 +1,15 @@
-# P2 实施规划 — Evidence-Grounded Methodology Extraction
+# P2 实施计划与验收记录 — Evidence-Grounded Methodology Extraction
 
-> **状态**：`Planned`（规划完成，尚未开始实现）
+> **状态**：`Complete`（代码、测试、文档和阶段验收已通过）
 >
-> **更新时间**：2026-08-05
+> **更新时间**：2026-08-06
 >
 > **前置条件**：P0 核心运行时和 P1 论文阅读链路已完成并通过当前质量基线
 >
 > **P2 核心目标**：实现 Methodologist，将 `Paper` 与可选 `PaperNote` 转换为带原文证据的方法学结构 `MethodAnalysis`
 
-本文是 P2 的执行依据。文中的类、模块、命令和 schema 均为**计划新增**，在代码、测试和文档全部完成前不得标记为可用。
+本文曾是 P2 的执行依据；当前代码、测试、命令和 schema 均已落地。后续变更必须
+继续遵守本文的证据边界和兼容性约束。
 
 ---
 
@@ -114,8 +115,8 @@ MethodAnalysis
 ├── architecture
 ├── training_recipe
 ├── evaluation_protocol
+│   └── reported_claims[]
 ├── equations[]
-├── reported_claims[]
 ├── assumptions[]
 ├── reproducibility_gaps[]
 ├── evidence_coverage
@@ -274,16 +275,19 @@ MethodAnalysis(
     algorithms=[...],
     architecture=[...],
     training_recipe=...,
-    evaluation_protocol=...,
+    evaluation_protocol=EvaluationProtocol(reported_claims=[...]),
     equations=[...],
-    reported_claims=[...],
     assumptions=[...],
     reproducibility_gaps=[...],
     evidence_coverage=0.86,
     total_tokens_used=0,
-    extraction_trace=[],
+    extraction_trace=["0:list_sections:ok", "1:finalize:ok"],
 )
 ```
+
+`reported_claims` 的唯一序列化位置是 `evaluation_protocol`。早期 P2 草案的
+顶层输入仍会在加载时迁移，`analysis.reported_claims` 仅保留为兼容读取属性。
+`extraction_trace` 只记录 step、工具名和结果，不保存模型思维或论文正文。
 
 `evidence_coverage` 的计算规则必须在代码中确定，例如“要求证据的非空声明中，至少有一个 verified evidence 的比例”，不能让模型自行填百分比。
 
@@ -633,8 +637,7 @@ P2 不得破坏：
 
 ## 12. P2 准入与里程碑提升
 
-P2.0 仍属于 `Planned` 状态下允许完成的契约/fixture 评审。只有以下证据齐全，
-P2 才能转为 `Ready` 并开始 P2.1 代码实现：
+P2.0–P2.6 已完成，以下证据作为阶段验收记录保留：
 
 - `MethodAnalysis`、`EvidenceRef`、`EquationEvidence`、`ReportedClaimDraft` golden JSON；
 - 一篇公式可捕获论文和一篇公式丢失论文的离线 fixture；
@@ -642,16 +645,16 @@ P2 才能转为 `Ready` 并开始 P2.1 代码实现：
 - P3/P4/P5 对公开字段的 consumer review；
 - P1 公共模型无需破坏性修改的验证结论。
 
-安全停止点：P2-A 为 schema/evidence validator；P2-B 为离线 Methodologist 和
-MethodologyPipeline；P2-C 才包含公共 API/CLI、DeepSeek smoke 和完整阶段门。
-P2-A/P2-B 可以独立评审，但都不能把 P2 标为 `Complete`。
+安全停止点已经通过：P2-A 为 schema/evidence validator；P2-B 为离线
+Methodologist 和 MethodologyPipeline；P2-C 包含公共 API/CLI、DeepSeek smoke
+和完整阶段门。
 
 ---
 
 ## 13. P2 完成定义
 
-只有按 `Planned` → `Ready` → `In Progress` 生命周期进入实现，并同时满足以下
-条件，P2 才能改为 `Complete`：
+P2 已按 `Planned` → `Ready` → `In Progress` 生命周期完成实现，并满足以下
+完成条件；这些条件也是后续回归的维护门：
 
 1. `MethodAnalysis` 及 evidence/equation/claim schema 稳定、公开、可 JSON round-trip；
 2. Methodologist 能从 `Paper` 生成方法、架构、训练和评价结构；

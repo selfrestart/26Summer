@@ -56,3 +56,10 @@ def test_pdf_parser_does_not_treat_a_sentence_as_a_section_heading() -> None:
 
     assert parser._match_heading("Results show consistent improvements on every dataset.") is None
     assert parser._match_heading("Results") == SectionType.RESULTS
+
+
+def test_pdf_parser_recognizes_decimal_section_headings() -> None:
+    parser = PDFParser()
+
+    assert parser._match_heading("2.1 Method") == SectionType.METHOD
+    assert parser._match_heading("3.1 Experimental Setup") == SectionType.EXPERIMENTS

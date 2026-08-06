@@ -84,6 +84,7 @@ nav:
     - Configuration: getting-started/configuration.md
   - User Guide:
     - Paper Reading: user-guide/paper-reading.md
+    - Methodology Analysis: user-guide/methodology-analysis.md
     - Reproduction: user-guide/reproduction.md
     - Literature Survey: user-guide/literature-survey.md
     - Custom Agents: user-guide/custom-agent.md
@@ -117,7 +118,11 @@ nav:
     - P1 Design Rationale: P1-DESIGN-RATIONALE.md
     - P1 Technical Reference: P1-TECHNICAL-REFERENCE.md
     - P1 Implementation Guide: P1-IMPLEMENTATION-GUIDE.md
+    - P2 Design Rationale: P2-DESIGN-RATIONALE.md
+    - P2 Technical Reference: P2-TECHNICAL-REFERENCE.md
     - P2 Implementation Plan: P2-IMPLEMENTATION-PLAN.md
+    - Historical Plans:
+      - P1 Paper Reading Plan: superpowers/plans/2026-08-04-p1-paper-reading.md
     - P3 Implementation Plan: P3-IMPLEMENTATION-PLAN.md
     - P4 Implementation Plan: P4-IMPLEMENTATION-PLAN.md
     - P5 Implementation Plan: P5-IMPLEMENTATION-PLAN.md

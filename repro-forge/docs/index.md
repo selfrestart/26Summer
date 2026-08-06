@@ -2,14 +2,15 @@
 
 Welcome to the ReproForge documentation. ReproForge is being built as a
 multi-agent framework for computer-science paper reading and reproduction. The
-current release is a working P1 paper-reading system; the full reproduction
-platform remains the roadmap target.
+current release is a working P2 paper-reading and methodology system; the
+full reproduction platform remains the roadmap target.
 
 !!! note "Current project status"
 
-    P0 and P1 are implemented. P1 provides PDF/arXiv paper ingestion,
+    P0, P1 and P2 are implemented. P1 provides PDF/arXiv paper ingestion,
     token-aware chunking, the PaperReader agent, provider injection, and a
-    `PaperPipeline`/CLI surface. Method extraction, reproduction execution,
+    `PaperPipeline`/CLI surface. P2 adds the `Methodologist`, `PaperEvidenceView`,
+    `MethodAnalysis` and methodology CLI surface. Reproduction execution,
     knowledge graph, API, and frontend remain roadmap work.
 
     See [P1 Design Rationale](P1-DESIGN-RATIONALE.md) for the decisions behind
@@ -18,19 +19,17 @@ platform remains the roadmap target.
     Developers continuing the implementation should also read the
     [P1 Implementation Guide](P1-IMPLEMENTATION-GUIDE.md).
 
-    The next planned phase is [P2 Evidence-Grounded Methodology
-    Extraction](P2-IMPLEMENTATION-PLAN.md). P2 will produce a validated
-    `MethodAnalysis` with source-bound evidence, explicit equation capture
-    status, and raw reported-claim drafts; code generation remains P3 and
-    knowledge-graph writes remain P5. P2 is still `Planned`: P2.0 contract and
-    fixture review must pass before the phase becomes `Ready`.
+    P2 is complete and produces a validated `MethodAnalysis` with source-bound
+    evidence, explicit equation capture status, and raw reported-claim drafts;
+    code generation remains P3 and knowledge-graph writes remain P5. See the
+    [P2 technical reference](P2-TECHNICAL-REFERENCE.md) for the public API.
 
 ## What is ReproForge?
 
 ReproForge addresses the **reproducibility crisis** in computer science. P1
-implements the first vertical slice: turn a local PDF or arXiv paper into a
-structured, traceable `PaperNote`. The six-agent pipeline described below is
-the target architecture, not the current executable surface.
+implements the paper-reading slice and P2 adds evidence-grounded methodology
+analysis. The six-agent pipeline described below is the target architecture;
+P3+ components remain roadmap work.
 
 <div class="grid cards" markdown>
 
@@ -61,7 +60,7 @@ the target architecture, not the current executable surface.
 
     [:octicons-arrow-right-24: Explore knowledge graph](architecture/knowledge-graph.md)
 
-- :material-robot: **Multi-Agent System (P1: PaperReader only)**
+- :material-robot: **Agent System (P1/P2 Current)**
 
     ---
 
@@ -90,7 +89,7 @@ the target architecture, not the current executable surface.
 
 </div>
 
-## Current P1 Data Flow
+## Current P1/P2 Data Flow
 
 ```mermaid
 flowchart LR
@@ -100,12 +99,16 @@ flowchart LR
     CHUNK --> READER[PaperReader]
     READER --> NOTE[PaperNote JSON]
     READER --> TRACE[Trace + token usage]
+    PAPER --> EVIDENCE[PaperEvidenceView]
+    NOTE -. optional hint .-> METHOD[Methodologist]
+    EVIDENCE --> METHOD
+    METHOD --> ANALYSIS[MethodAnalysis JSON]
 ```
 
 ## Target Architecture Concepts
 
-The following concepts explain the planned end state. Only the P1 components
-identified in the status table are implemented today.
+The following concepts combine the current P1/P2 surface with the planned end
+state. Use the status table to distinguish implemented and planned components.
 
 ReproForge is built around five core abstractions:
 
@@ -133,23 +136,24 @@ Three-tier memory architecture:
 | Episodic | ChromaDB vector store | Past paper analyses & experiment history |
 | Semantic | Neo4j knowledge graph | Cross-paper method relationships & benchmarks |
 
-### 3. Tools (P1 Current, P2–P7 Planned Evolution)
+### 3. Tools (P1/P2 Current, P3-P7 Planned Evolution)
 
 P1 PaperReader owns three in-process read-only tools. Later phases expand the
 tool surface only after their domain contracts are stable:
 
-- **P2**: evidence lookup for methodology extraction
+- **P2**: evidence lookup for methodology extraction (implemented by `PaperEvidenceView`)
 - **P3/P4**: constrained execution and verification tools
 - **P5**: artifact, vector, graph, and survey retrieval
 - **P6**: MCP tools/resources backed by the shared application service
 - **P7**: identity, policy, approval, and audit wrappers
 
-### 4. Pipeline (P2–P4 Planned)
+### 4. Pipeline (P2 Current, P3-P4 Planned)
 
 The reproduction pipeline is a directed workflow:
 
-```
-Paper → Algorithm Extraction → Code Generation → Docker Execution → Verification → Report
+```text
+Paper -> MethodAnalysis -> Code Generation -> Docker Execution -> Verification -> Report
+        P2 complete       P3 planned          P3 planned          P4 planned
 ```
 
 ### 5. Evaluation (P8 Planned)
@@ -165,19 +169,19 @@ Built-in benchmarks measure agent performance:
 
 | Phase | Status |
 |-------|--------|
-| P0 (Core and infrastructure) | ✅ Complete |
-| P1 (PaperReader) | ✅ Complete |
-| P2 (Methodologist + evidence-grounded methodology extraction) | 📋 Planned |
-| P3 (Auditable code + sandboxed experiments) | 📋 Planned |
-| P4 (Math + claim/result verification) | 📋 Planned |
-| P5 (Memory + knowledge graph + survey) | 📋 Planned |
-| P6 (Application service + MCP + API + workbench) | 📋 Planned |
-| P7 (Security + guardrails + governance) | 📋 Planned |
-| P8 (Evaluation + observability + release gates) | 📋 Planned |
+| P0 (Core and infrastructure) | Complete |
+| P1 (PaperReader) | Complete |
+| P2 (Methodologist + evidence-grounded methodology extraction) | Complete |
+| P3 (Auditable code + sandboxed experiments) | Planned |
+| P4 (Math + claim/result verification) | Planned |
+| P5 (Memory + knowledge graph + survey) | Planned |
+| P6 (Application service + MCP + API + workbench) | Planned |
+| P7 (Security + guardrails + governance) | Planned |
+| P8 (Evaluation + observability + release gates) | Planned |
 
 [Read the P0-P8 roadmap :octicons-arrow-right-24:](ROADMAP.md)
 
-The roadmap is authoritative for the `Planned` → `Ready` → `In Progress` →
+The roadmap is authoritative for the `Planned` -> `Ready` -> `In Progress` ->
 `Complete` lifecycle, Definition of Ready, stage gates, and safe stopping
 milestones. A planned document, empty namespace, optional dependency, or future
 Compose service is not an implemented capability.

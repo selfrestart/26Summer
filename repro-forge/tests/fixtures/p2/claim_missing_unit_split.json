@@ -1,0 +1,19 @@
+{
+  "schema_version": "p2.v1",
+  "paper_id": "fixture.p2.claim-missing",
+  "title": "Incomplete Claim Fixture",
+  "problem_statement": "Test raw claim preservation when metadata is absent.",
+  "evaluation_protocol": {
+    "reported_claims": [
+      {
+        "claim_id": "claim_raw",
+        "dataset": "FixtureSet",
+        "metric_name": "Score",
+        "reported_value": "94.5",
+        "raw_text": "score=94.5",
+        "status": "verified",
+        "notes": "The paper does not specify the unit or evaluation split."
+      }
+    ]
+  }
+}

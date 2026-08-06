@@ -7,7 +7,7 @@
 > **行文原则**: 每个技术选择遵循 **问题 → 备选方案 → 决策依据 → 代价认知** 四段式论证。
 >
 > **真实性边界**：本文同时包含当前实现决策和目标架构论证。P0、P1 已完成，
-> P2–P8 仍是规划。凡涉及 Methodologist、CodeForger、Experimentor、
+> P2 已完成；P3–P8 仍是规划。凡涉及 CodeForger、Experimentor、
 > MathChecker、Verifier、长期 Memory、知识图谱、MCP/API/UI、Guardrails、
 > Benchmark 或完整 OpenTelemetry 的内容，均应按对应阶段的设计方案理解，
 > 不能作为当前代码已实现的陈述。统一状态见 [P0–P8 总体路线图](ROADMAP.md)。
@@ -53,7 +53,7 @@
 | PaperQA / Elicit | 论文问答 | 只做导读，不做代码生成 |
 | ReScience C | 人工复现期刊 | 依赖人工，无自动化 |
 | SWE-bench (Agent) | 代码仓库 Bug 修复 | 面向软件工程，不面向学术论文 |
-| **ReproForge（目标）** | **端到端自动复现** | **P1 已完成导读；P2–P4 规划代码生成、实验执行和结果验证闭环** |
+| **ReproForge（目标）** | **端到端自动复现** | **P1 已完成导读、P2 已完成方法抽取；P3–P4 规划代码生成、实验执行和结果验证闭环** |
 
 ---
 
@@ -607,13 +607,13 @@ Fidelity = (1 - Σ|claimed_i - reproduced_i| / claimed_i / N) × 100
 
 > "P8 会为各阶段分别建立确定性指标、人工 golden set 和必要的
 > LLM-as-Judge 辅助评测。Judge 不能作为唯一真值，安全或核心正确性失败也不能
-> 被平均总分抵消。当前 107 个测试只证明工程回归基线，不证明论文复现质量。"
+> 被平均总分抵消。当前 175 个测试只证明工程回归基线，不证明论文复现质量。"
 
 ---
 
 ## 第十一章　P8 规划：可观测性
 
-P0/P1 已有进程内 `AgentTrace` 和 token usage；完整 OTel span/metrics/log
+P0-P2 已有进程内 `AgentTrace` 和 token usage；完整 OTel span/metrics/log
 correlation、成本预算和发布 scorecard 尚未实现。
 
 ### 11.1 为什么 OTel 而不是 LangSmith
@@ -765,24 +765,25 @@ class ColabBackend(BaseExecutionBackend):
 
 ### 14.1 技术面试版（30 秒）
 
-> "我开发了 ReproForge 的前两个阶段：P0 建立类型、ReAct、Provider、测试、
+> "我开发了 ReproForge 的前三个阶段：P0 建立类型、ReAct、Provider、测试、
 > CI 和包构建基线；P1 把本地 PDF/arXiv 转成可追踪的 `PaperNote`，支持
-> OpenAI-compatible/DeepSeek Provider、token-aware chunking、pipeline 和 CLI。
-> 当前基线是 107 个测试、Ruff、mypy、MkDocs 和 wheel smoke 全部通过；P2–P8
-> 已冻结接口和验收计划，但尚未实现。"
+> OpenAI-compatible/DeepSeek Provider、token-aware chunking、pipeline 和 CLI；
+> P2 再把原文变成带来源校验的 `MethodAnalysis`。当前基线是 175 个测试、
+> 86.34% 覆盖率，Ruff 和 mypy 已通过；P3-P8 仍按阶段门规划。"
 
 ### 14.2 HR 面试版（30 秒）
 
 > "我在做一个开源项目 ReproForge，目标是逐阶段帮助研究者从阅读论文走向
-> 可验证复现。目前已完成工程基础和论文阅读链路，并建立 CI、代码质量、环境
-> 锁定、文档和开源治理；方法抽取、实验和验证按清晰的阶段门继续推进。"
+> 可验证复现。目前已完成工程基础、论文阅读和证据化方法抽取，并建立 CI、
+> 代码质量、环境锁定、文档和开源治理；代码实验和结果验证按阶段门继续推进。"
 
 ### 14.3 非技术领导版（60 秒）
 
 > "我在做一个能让研究者更高效复现论文的工具。背景是——读论文时经常遇到作者声称效果很好但代码不公开，或者环境对不上。大量研究时间浪费在'能不能跑通'上。
 >
-> 方案是把流程拆成可验收阶段：目前能把 PDF/arXiv 论文变成结构化阅读笔记；
-> 后续再依次加入证据化方法抽取、代码与隔离实验、结果验证和知识沉淀。这样每
+> 方案是把流程拆成可验收阶段：目前能把 PDF/arXiv 论文变成结构化阅读笔记，
+> 并把方法、配置和结果声明绑定回原文证据；后续再依次加入代码与隔离实验、
+> 结果验证和知识沉淀。这样每
 > 一步都能独立测试，而不是先声称一个尚不可验证的一条龙系统。
 >
 > 商业价值：如果作为 SaaS 服务提供给高校和企业，解决学术可复现性这一系统性问题，市场空间可观。这个方向目前没有成熟的商业产品，是蓝海。"
@@ -808,7 +809,7 @@ class ColabBackend(BaseExecutionBackend):
 | PapersWithCode | ✅ | ❌ | ❌ | ❌ |
 | PaperQA | ❌ | ❌ | ❌ | ❌ |
 | SWE-bench | ❌ | ❌ | ✅ | ❌ |
-| **ReproForge** | ❌ | **✅** | **✅** | **✅** |
+| **ReproForge** | Planned (P5) | Planned (P3) | Planned (P3) | Planned (P4) |
 
 ## 附录 C：推荐阅读
 

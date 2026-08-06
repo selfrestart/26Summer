@@ -1,13 +1,13 @@
 # 架构总览
 
-本文把 **当前可运行的 P1 架构** 与 **P2–P8 目标架构** 分开描述。判断功能是否完成，应以当前代码、测试和 P1 技术参考为准，而不是以空目录或路线图图示为准。
+本文把 **当前可运行的 P1/P2 架构** 与 **P3–P8 目标架构** 分开描述。判断功能是否完成，应以当前代码、测试和阶段技术参考为准，而不是以空目录或路线图图示为准。
 
 ## 当前状态
 
 | 层级 | 已实现 | 尚未实现 |
 |---|---|---|
 | 用户入口 | Python API、`repro-forge` CLI | Web UI、REST/SSE API |
-| 领域能力 | PDF/arXiv、论文模型、分块、PaperReader、PaperNote | 方法抽取、代码生成、实验、核验 |
+| 领域能力 | PDF/arXiv、论文模型、分块、PaperReader、PaperNote、Methodologist、MethodAnalysis | 代码生成、实验、核验 |
 | Agent | `PaperReader` | Methodologist、MathChecker、CodeForger、Experimentor、Verifier |
 | Provider | OpenAI-compatible，包括 DeepSeek 和本地 endpoint | 独立 Anthropic/本地 Provider 实现 |
 | 基础设施 | P0 core/types/trace、质量工具链 | Memory、知识图谱、MCP、Guardrails、Observability |

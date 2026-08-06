@@ -359,10 +359,14 @@ class PaperReader(BaseAgent):
         for step in self._trace.steps:
             if step.action and step.action.tool_name == "finalize":
                 raw = step.action.tool_input.get("raw_output", "")
-                try:
-                    note_data = json.loads(raw) if isinstance(raw, str) else raw
-                except json.JSONDecodeError:
-                    note_data = {"tldr": raw[:500]}
+                note_data, error = self._parse_note_data(raw)
+                if error is not None:
+                    return TaskResult(
+                        task_id=task.id,
+                        status=TaskStatus.FAILED,
+                        error_message=error,
+                        trace=self._trace,
+                    )
                 return TaskResult(
                     task_id=task.id,
                     status=TaskStatus.SUCCESS,
@@ -404,10 +408,14 @@ class PaperReader(BaseAgent):
         )
         self._trace.total_tokens += response.usage.get("total_tokens", 0)
         raw_output = self._extract_json(response.content)
-        try:
-            note_data = json.loads(raw_output)
-        except json.JSONDecodeError:
-            note_data = {"tldr": response.content[:500]}
+        note_data, error = self._parse_note_data(raw_output)
+        if error is not None:
+            return TaskResult(
+                task_id=task.id,
+                status=TaskStatus.FAILED,
+                error_message=error,
+                trace=self._trace,
+            )
         return TaskResult(
             task_id=task.id,
             status=TaskStatus.SUCCESS,
@@ -421,6 +429,31 @@ class PaperReader(BaseAgent):
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _parse_note_data(raw: object) -> tuple[dict[str, object] | None, str | None]:
+        """Parse and minimally validate the final PaperNote payload.
+
+        ``PaperNote`` intentionally has defaults for partially populated
+        notes, but an empty object or arbitrary prose is not a successful
+        reading result. Keeping this check at the agent boundary prevents
+        malformed provider output from being published as a valid note.
+        """
+        if not isinstance(raw, dict):
+            if not isinstance(raw, str):
+                return None, "Final PaperNote output must be a JSON object"
+            try:
+                raw = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                return None, f"Invalid PaperNote JSON: {exc.msg}"
+        if not isinstance(raw, dict):
+            return None, "Final PaperNote output must be a JSON object"
+        if not raw:
+            return None, "Final PaperNote output must not be empty"
+        tldr = raw.get("tldr")
+        if not isinstance(tldr, str) or not tldr.strip():
+            return None, "Final PaperNote output requires a non-empty 'tldr'"
+        return raw, None
 
     def _tool_error_observation(self, action: Action, error: str) -> Observation:
         content = f"Tool error: {error}"

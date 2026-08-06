@@ -1,7 +1,7 @@
 ﻿# 测试策略
 
-本文档描述 ReproForge 的测试策略、工具和最佳实践。当前已实现的测试重点是
-P0 核心运行时和 P1 论文阅读链路；P2–P8 测试目标只是未来阶段门。
+本文档描述 ReproForge 的测试策略、工具和最佳实践。当前测试覆盖 P0 核心运行时、
+P1 论文阅读链路和 P2 证据化方法抽取；P3-P8 仍是未来阶段门。
 
 ---
 
@@ -105,8 +105,9 @@ assert len(agent.trace.steps) == 3
 | 阶段 | 单元 | 集成 | E2E |
 |------|------|------|-----|
 | P0（核心与基础设施） | 已覆盖 | - | - |
-| P1（PaperReader + paper pipeline） | 86.06% 总体基线 | 集成测试已覆盖主要链路 | 外部 smoke test 按需运行 |
-| P2-P8 | ≥ 90% | ≥ 70% | ≥ 50% |
+| P1（PaperReader + paper pipeline） | 已覆盖 | 集成测试已覆盖主要链路 | 外部 smoke test 按需运行 |
+| P2（Methodologist + evidence pipeline） | 已覆盖 | 离线端到端和 JSON round-trip | DeepSeek smoke 按需运行 |
+| P3-P8 | >= 90% | >= 70% | >= 50% |
 
 ---
 
@@ -123,8 +124,19 @@ assert len(agent.trace.steps) == 3
 | `test_cli.py` | 版本、能力、dotenv、keyless endpoint 和输出文件 |
 | `test_read_pipeline.py` | PaperChunker + PaperReader 集成链路 |
 
-当前验证基线：`uv run pytest -q` 为 107 passed，覆盖率 86.06%。真实 DeepSeek
-和 arXiv smoke test 需要网络、凭据或外部服务，不属于默认测试套件。
+当前精确用例数和覆盖率以 `uv run pytest -q` 输出为准，避免文档在每次增加测试后
+失真。真实 DeepSeek 和 arXiv smoke test 需要网络、凭据或外部服务，不属于默认
+测试套件。
+
+## P2 测试映射
+
+| 测试文件 | 关注点 |
+|---|---|
+| `test_methodology_schemas.py` | schema round-trip、claim 迁移、coverage 和失败 fixtures |
+| `test_evidence.py` | source/quote hash、bounded chunks、重复标题和来源校验 |
+| `test_methodologist.py` | ReAct/native tools、repair、模型继承、证据降级和 trace |
+| `test_methodology_pipeline.py` | Paper/PDF 组合、PaperNote 和依赖注入 |
+| `test_methodology_flow.py` | 离线端到端分析与 JSON round-trip |
 
 ## 失败排查顺序
 

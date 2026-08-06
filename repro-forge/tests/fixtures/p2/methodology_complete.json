@@ -1,0 +1,68 @@
+{
+  "schema_version": "p2.v1",
+  "paper_id": "fixture.p2.complete",
+  "title": "Complete Methodology Fixture",
+  "problem_statement": "Classify images with an evidence-grounded method.",
+  "algorithms": [
+    {
+      "name": "FixtureNet",
+      "purpose": "Image classification",
+      "steps": [
+        {
+          "order": 1,
+          "description": "Apply the reported convolutional block",
+          "evidence": {
+            "section_title": "Method",
+            "quote": "We apply a convolutional block."
+          }
+        }
+      ],
+      "evidence": {
+        "section_title": "Method",
+        "quote": "Our method is FixtureNet."
+      }
+    }
+  ],
+  "architecture": [],
+  "training_recipe": {
+    "optimizer": {
+      "value": "Adam",
+      "raw_text": "Adam",
+      "status": "verified",
+      "evidence": {
+        "section_title": "Training",
+        "quote": "We use Adam."
+      }
+    },
+    "learning_rate": {
+      "value": 0.001,
+      "raw_text": "learning rate 0.001",
+      "status": "verified",
+      "evidence": {
+        "section_title": "Training",
+        "quote": "learning rate 0.001"
+      }
+    }
+  },
+  "evaluation_protocol": {
+    "reported_claims": [
+      {
+        "claim_id": "claim_1",
+        "dataset": "FixtureSet",
+        "split": "test",
+        "metric_name": "Accuracy",
+        "reported_value": "91.2",
+        "unit": "%",
+        "status": "verified",
+        "evidence": {
+          "section_title": "Results",
+          "quote": "91.2% accuracy on FixtureSet."
+        }
+      }
+    ]
+  },
+  "equations": [],
+  "reported_claims": [],
+  "assumptions": [],
+  "reproducibility_gaps": []
+}

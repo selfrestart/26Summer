@@ -6,7 +6,7 @@
 > - [P1 设计论证](P1-DESIGN-RATIONALE.md)：解释为什么这样设计；
 > - [P1 技术参考](P1-TECHNICAL-REFERENCE.md)：列出 API、命令和配置速查。
 >
-> 本文只描述已经存在的 P1 代码。Methodologist 属于 P2；代码生成/实验属于 P3；验证属于 P4；记忆/知识图谱属于 P5；MCP/HTTP API/前端属于 P6，均尚未实现。
+> 本文只描述已经存在的 P1 代码。Methodologist 属于已完成的 P2；代码生成/实验属于 P3；验证属于 P4；记忆/知识图谱属于 P5；MCP/HTTP API/前端属于 P6，后续阶段尚未实现。
 
 ---
 
@@ -427,7 +427,7 @@ LLMResponse.content
 4. 从 markdown code fence 或大括号中提取 JSON；
 5. 构造 `TaskResult` 和 `PaperNote`。
 
-这是一种保底策略，不等于保证模型输出一定符合 schema；非 JSON 内容会退化为截断的 `tldr`。
+最终内容必须是非空 JSON 对象，并至少包含非空 `tldr`。非法 JSON、空对象或缺少 `tldr` 会生成失败的 `TaskResult`，由 `PaperReader.read()` 抛出错误；不会把任意模型 prose 静默发布为 `PaperNote`。
 
 ---
 
@@ -581,7 +581,7 @@ Provider 必须实现 `generate()`、`generate_stream()` 和 `provider_name`。�
 | 空输入 | `test_chunker.py` | 返回空列表而非伪造 chunk |
 | 工具参数错误 | `test_paper_reader.py` | `Observation.is_error` 和 tool message |
 | native parallel calls | `test_paper_reader.py` | call id 对齐、pending call 清理 |
-| 最终 JSON | `test_paper_reader.py` | fenced JSON、普通 JSON、退化 tldr |
+| 最终 JSON | `test_paper_reader.py` | fenced JSON、普通 JSON、非法/空结果失败语义 |
 | Provider 优先级 | `test_openai_provider.py` | OpenAI/DeepSeek/显式参数 |
 | keyless 安全边界 | `test_cli.py` | 本地允许、公网拒绝 |
 | 编排注入 | `test_pipeline.py` | fake parser/client/reader 被调用 |
@@ -627,7 +627,7 @@ P1 可宣布“完成”至少需要：
 - 步数耗尽仍能尝试最终总结；
 - OpenAI、DeepSeek、keyless local endpoint 的配置边界清楚；
 - 测试、静态检查、文档构建和包构建均通过；
-- 文档不把 P2–P8 空包、compose 模板和架构图当作已实现功能。
+- 文档不把 P3–P8 空包、compose 模板和架构图当作已实现功能；P2 以当前方法抽取 API 和验收记录为准。
 
 ---
 
@@ -670,7 +670,7 @@ P1 可宣布“完成”至少需要：
 - 新 tokenizer 作为 chunker 策略注入，不修改 `PaperChunk` 契约；
 - 新 provider 适配 `BaseProvider`，不要在 Agent 中分支判断厂商；
 - 新 Agent 复用 `BaseAgent` trace 和状态，不复制循环；
-- P2–P8 功能只有在代码、测试、配置和文档同时具备时，才能从“规划”改为“已完成”。
+- P3–P8 功能只有在代码、测试、配置和文档同时具备时，才能从“规划”改为“已完成”。
 
 P2 的最新范围、schema 草案、工作包和完成定义见
 [P2 实施规划](P2-IMPLEMENTATION-PLAN.md)。

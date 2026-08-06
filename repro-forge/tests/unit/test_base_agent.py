@@ -1,5 +1,7 @@
 """Tests for the BaseAgent lifecycle and FakeAgent test utility."""
 
+import asyncio
+
 import pytest
 
 from repro_forge.core.types import AgentState
@@ -124,6 +126,43 @@ class TestFakeAgent:
         assert agent.state == AgentState.ERROR
         assert agent.trace.final_state == AgentState.ERROR
         assert agent.trace.end_time is not None
+
+    @pytest.mark.asyncio
+    async def test_deadline_returns_failed_result_and_runs_cleanup(
+        self, sample_task: TaskSpec
+    ) -> None:
+        agent = FakeAgent(max_steps=1)
+        teardown_called = False
+
+        async def _slow_think(task: TaskSpec) -> None:
+            await asyncio.sleep(0.05)
+
+        async def _tracking_teardown() -> None:
+            nonlocal teardown_called
+            teardown_called = True
+
+        agent.think = _slow_think  # type: ignore[assignment]
+        agent.teardown = _tracking_teardown  # type: ignore[method-assign]
+
+        result = await agent.run(sample_task.model_copy(update={"deadline_seconds": 0.001}))
+
+        assert result.status == "failed"
+        assert "deadline" in (result.error_message or "").lower()
+        assert teardown_called
+        assert agent.state == AgentState.ERROR
+
+    @pytest.mark.asyncio
+    async def test_teardown_error_does_not_replace_task_result(self, sample_task: TaskSpec) -> None:
+        agent = FakeAgent(max_steps=1)
+
+        async def _failing_teardown() -> None:
+            raise RuntimeError("cleanup failed")
+
+        agent.teardown = _failing_teardown  # type: ignore[method-assign]
+        result = await agent.run(sample_task)
+
+        assert result.status == "success"
+        assert agent.trace.final_state == AgentState.DONE
 
 
 class TestFakeLLMProvider:

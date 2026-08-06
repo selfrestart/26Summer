@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Base agent abstraction (`core/base.py`) with ReAct loop and streaming support
 - Multi-provider LLM interface (`providers/base.py`)
 - Community files: LICENSE, README, CONTRIBUTING, CODE_OF_CONDUCT, GOVERNANCE, SECURITY
+- P1 paper reading: `PDFParser`, `ArxivClient`, `PaperChunker`, `PaperPipeline`, `PaperReader`, `OpenAIProvider`
+- P2 methodology extraction: `MethodAnalysis`/`EvidenceRef`/`EquationEvidence`/`ReportedClaimDraft` schemas, `PaperEvidenceView`, `Methodologist`, `MethodologyPipeline`, `analyze-pdf`/`analyze-json` CLI
+- P2 docs: design rationale, technical reference, methodology user guide
 
 ---
 

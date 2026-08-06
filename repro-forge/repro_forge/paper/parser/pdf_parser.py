@@ -26,22 +26,25 @@ class PDFParser:
 
     # Common section heading patterns in CS papers (case-insensitive)
     _SECTION_PATTERNS: ClassVar[list[tuple[str, SectionType]]] = [
-        (r"^\d*\.?\s*abstract\b", SectionType.ABSTRACT),
-        (r"^\d*\.?\s*introduction\b", SectionType.INTRODUCTION),
+        (r"^(?:\d+(?:\.\d+)*\s*)?abstract\b", SectionType.ABSTRACT),
+        (r"^(?:\d+(?:\.\d+)*\s*)?introduction\b", SectionType.INTRODUCTION),
         (
-            r"^\d*\.?\s*(related\s+work|background|previous\s+work|literature\s+review)\b",
+            r"^(?:\d+(?:\.\d+)*\s*)?(related\s+work|background|previous\s+work|literature\s+review)\b",
             SectionType.RELATED_WORK,
         ),
         (
-            r"^\d*\.?\s*(method|approach|model|architecture|framework|proposed)\b",
+            r"^(?:\d+(?:\.\d+)*\s*)?(method|approach|model|architecture|framework|proposed)\b",
             SectionType.METHOD,
         ),
-        (r"^\d*\.?\s*(experiments?|evaluation|implementation|setup)\b", SectionType.EXPERIMENTS),
-        (r"^\d*\.?\s*(results?|findings?|performance)\b", SectionType.RESULTS),
-        (r"^\d*\.?\s*(discussion|analysis)\b", SectionType.DISCUSSION),
-        (r"^\d*\.?\s*(conclusion|summary|future\s+work)\b", SectionType.CONCLUSION),
-        (r"^\d*\.?\s*(appendix|supplementary)", SectionType.APPENDIX),
-        (r"^\d*\.?\s*references?\b", SectionType.REFERENCES),
+        (
+            r"^(?:\d+(?:\.\d+)*\s*)?(experiments?|experimental|evaluation|implementation|setup)\b",
+            SectionType.EXPERIMENTS,
+        ),
+        (r"^(?:\d+(?:\.\d+)*\s*)?(results?|findings?|performance)\b", SectionType.RESULTS),
+        (r"^(?:\d+(?:\.\d+)*\s*)?(discussion|analysis)\b", SectionType.DISCUSSION),
+        (r"^(?:\d+(?:\.\d+)*\s*)?(conclusion|summary|future\s+work)\b", SectionType.CONCLUSION),
+        (r"^(?:\d+(?:\.\d+)*\s*)?(appendix|supplementary)", SectionType.APPENDIX),
+        (r"^(?:\d+(?:\.\d+)*\s*)?references?\b", SectionType.REFERENCES),
     ]
 
     def __init__(self) -> None:

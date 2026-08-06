@@ -4,7 +4,7 @@
 >
 > **范围**：PDF/arXiv 输入、结构化论文模型、token-aware 分块、PaperReader、OpenAI-compatible Provider、PaperPipeline 与 CLI。
 >
-> **不在范围内**：P2 方法抽取、P3 代码与实验、P4 核验、P5 记忆/知识图谱、P6 MCP/API/UI、P7 Guardrails 和 P8 Evaluation/Observability。这些均仍在规划。
+> **不在 P1 范围内**：P2 方法抽取已作为独立阶段完成；P3 代码与实验、P4 核验、P5 记忆/知识图谱、P6 MCP/API/UI、P7 Guardrails 和 P8 Evaluation/Observability 仍在规划。
 
 本文沿用 P0 文档的论证方式。每个决策都回答四个问题：**遇到了什么问题、有哪些备选方案、为什么做当前选择、选择带来了什么代价**。它既是技术评审材料，也是面试时解释 P1 工作的参考答案。
 
@@ -45,7 +45,8 @@ P1 的完成标准是这条链路能够被 Python API、离线测试和 CLI 独�
 | OpenAI-compatible Provider | 已完成 | OpenAI/DeepSeek/本地 endpoint 配置与流式测试 |
 | `PaperPipeline` | 已完成 | 解析、阅读、arXiv 下载组合测试 |
 | CLI | 已完成 | `--version`、`capabilities`、`read-pdf`、`read-json` |
-| Methodologist/代码/实验/Verifier | 规划中 | 分属 P2/P3/P4，不应描述为 P1 已实现 |
+| Methodologist | 已实现 | 分属 P2，本页只说明 P1 输入边界 |
+| 代码/实验/Verifier | 规划中 | 分属 P3/P4，不应描述为 P1/P2 已实现 |
 
 ---
 
@@ -298,5 +299,5 @@ PaperNote / Paper
 - **DeepSeek 是否需要改 Agent 代码？** 不需要，使用同一 OpenAI-compatible wire contract；只改变 key、base URL 和 model。
 - **P1 是否已经能复现论文？** 不能。P1 只提供可靠的阅读事实层，Methodologist、代码、执行和 Verifier 属于后续阶段。
 
-P1 之后的明确下一步见 [P2 实施规划](P2-IMPLEMENTATION-PLAN.md)：P2 只交付
+P1 之后的已完成阶段见 [P2 实施规划](P2-IMPLEMENTATION-PLAN.md)：P2 只交付
 带证据归因的 Methodologist/`MethodAnalysis`，知识图谱写入保留到 P5。

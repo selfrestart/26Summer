@@ -1,0 +1,24 @@
+{
+  "schema_version": "p2.v1",
+  "paper_id": "fixture.p2.equation-missing",
+  "title": "Unavailable Equation Fixture",
+  "problem_statement": "Test unavailable equation handling.",
+  "equations": [
+    {
+      "equation_id": "eq_image_1",
+      "label": "(1)",
+      "raw_text": "",
+      "normalized_text": "",
+      "parse_status": "not_available",
+      "symbol_hints": {}
+    }
+  ],
+  "reproducibility_gaps": [
+    {
+      "category": "source",
+      "description": "Equation (1) is rendered as an image and is unavailable in the text layer.",
+      "impact": "Mathematical verification cannot consume the original expression.",
+      "suggested_resolution": "Inspect the PDF image or obtain the source TeX."
+    }
+  ]
+}

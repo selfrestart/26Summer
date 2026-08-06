@@ -18,5 +18,5 @@ uv run repro-forge read-pdf paper.pdf --output note.json
 
 The output is a `PaperNote` containing a TL;DR, contributions, methodology
 summary, key findings, strengths, weaknesses, questions, reading trace, and
-token usage. Method extraction is planned for P2; reproduction generation,
+token usage. Method extraction is implemented in P2; reproduction generation,
 execution, and verification are planned for P3-P4.

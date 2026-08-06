@@ -38,6 +38,31 @@ def _build_parser() -> argparse.ArgumentParser:
     read_json.add_argument("path", type=Path)
     read_json.add_argument("--output", type=Path, help="Write the note as JSON")
     read_json.set_defaults(handler=_read_json)
+
+    analyze_pdf = subparsers.add_parser(
+        "analyze-pdf", help="Parse a PDF and extract methodology analysis"
+    )
+    analyze_pdf.add_argument("path", type=Path)
+    analyze_pdf.add_argument("--output", type=Path, help="Write the analysis as JSON")
+    analyze_pdf.add_argument(
+        "--paper-note",
+        type=Path,
+        help="Optional P1 PaperNote JSON file to use as context hints",
+    )
+    analyze_pdf.add_argument(
+        "--read-first",
+        action="store_true",
+        help="Run P1 PaperReader first and pass its note as context",
+    )
+    analyze_pdf.set_defaults(handler=_analyze_pdf)
+
+    analyze_json = subparsers.add_parser(
+        "analyze-json", help="Extract methodology from a serialized Paper JSON file"
+    )
+    analyze_json.add_argument("path", type=Path)
+    analyze_json.add_argument("--output", type=Path, help="Write the analysis as JSON")
+    analyze_json.add_argument("--paper-note", type=Path, help="Optional P1 PaperNote JSON file")
+    analyze_json.set_defaults(handler=_analyze_json)
     return parser
 
 
@@ -47,6 +72,9 @@ def _capabilities(_args: argparse.Namespace) -> int:
     print("  pdf: local PDF parsing (optional 'pdf' extra)")
     print("  arxiv: search, metadata, and PDF download (optional 'arxiv' extra)")
     print("  providers: OpenAI-compatible async provider (optional 'openai' extra)")
+    print("P2 capabilities:")
+    print("  methodology: MethodologyPipeline + Methodologist (evidence-grounded)")
+    print("  analyze-pdf / analyze-json: extract MethodAnalysis JSON")
     return 0
 
 
@@ -60,7 +88,10 @@ def _is_local_endpoint(base_url: str) -> bool:
     try:
         address = ip_address(hostname)
     except ValueError:
-        return "." not in hostname
+        # A bare hostname is not proof that it resolves locally.  In
+        # keyless mode only explicit localhost names are trusted; arbitrary
+        # DNS names such as ``http://evil:8000`` must still require a key.
+        return False
     return address.is_private or address.is_loopback
 
 
@@ -118,6 +149,50 @@ def _read_json(args: argparse.Namespace) -> int:
     paper = Paper.model_validate_json(args.path.read_text(encoding="utf-8"))
     note = asyncio.run(PaperPipeline(provider=_provider()).read(paper))
     _write_note(note, args.output)
+    return 0
+
+
+def _load_paper_note(path: Path | None) -> PaperNote | None:
+    """Load an optional P1 PaperNote JSON file."""
+    if path is None:
+        return None
+    from repro_forge.paper.schemas import PaperNote
+
+    return PaperNote.model_validate_json(path.read_text(encoding="utf-8"))
+
+
+def _write_analysis(analysis: object, output: Path | None) -> None:
+    payload = analysis.model_dump(mode="json")  # type: ignore[attr-defined]
+    rendered = json.dumps(payload, ensure_ascii=False, indent=2)
+    if output:
+        output.write_text(rendered + "\n", encoding="utf-8")
+    else:
+        print(rendered)
+
+
+def _analyze_pdf(args: argparse.Namespace) -> int:
+    from repro_forge.paper.extractor import MethodologyPipeline
+
+    pipeline = MethodologyPipeline(provider=_provider())
+    paper_note = _load_paper_note(args.paper_note)
+    if paper_note is not None:
+        paper = pipeline.paper_pipeline.parse_pdf(args.path)
+        analysis = asyncio.run(pipeline.analyze(paper, paper_note))
+    else:
+        analysis = asyncio.run(pipeline.analyze_pdf(args.path, read_first=args.read_first))
+    _write_analysis(analysis, args.output)
+    return 0
+
+
+def _analyze_json(args: argparse.Namespace) -> int:
+    from repro_forge.paper import Paper
+    from repro_forge.paper.extractor import MethodologyPipeline
+
+    paper = Paper.model_validate_json(args.path.read_text(encoding="utf-8"))
+    pipeline = MethodologyPipeline(provider=_provider())
+    paper_note = _load_paper_note(args.paper_note)
+    analysis = asyncio.run(pipeline.analyze(paper, paper_note))
+    _write_analysis(analysis, args.output)
     return 0
 
 
