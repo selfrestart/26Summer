@@ -1,7 +1,8 @@
 ﻿# 测试策略
 
 本文档描述 ReproForge 的测试策略、工具和最佳实践。当前测试覆盖 P0 核心运行时、
-P1 论文阅读链路和 P2 证据化方法抽取；P3-P8 仍是未来阶段门。
+P1 论文阅读、P2 证据化方法抽取，以及 P3 bundle/CodeForger/runner 安全边界。
+P3-C 真实 Docker smoke 已通过；P4-P8 仍为未来阶段。
 
 ---
 
@@ -59,6 +60,12 @@ uv run pytest -m "not llm"
 
 # 只跑 LLM 测试
 uv run pytest -m llm
+
+# P3 离线契约与安全回归（不需要 Docker）
+uv run pytest -q --no-cov tests/unit/test_p3_*.py
+
+# P3 真实 Docker smoke（需要 daemon + 审查过的精确 digest）
+uv run pytest -q --no-cov -m docker tests/integration/test_p3_docker_smoke.py
 ```
 
 ---
@@ -107,7 +114,8 @@ assert len(agent.trace.steps) == 3
 | P0（核心与基础设施） | 已覆盖 | - | - |
 | P1（PaperReader + paper pipeline） | 已覆盖 | 集成测试已覆盖主要链路 | 外部 smoke test 按需运行 |
 | P2（Methodologist + evidence pipeline） | 已覆盖 | 离线端到端和 JSON round-trip | DeepSeek smoke 按需运行 |
-| P3-P8 | >= 90% | >= 70% | >= 50% |
+| P3（CodeForger + experiment backends） | 已覆盖离线契约和安全回归 | Docker mock + 条件化真实 smoke | 已完成；真实隔离/资源/cleanup gate 通过 |
+| P4-P8 | >= 90% | >= 70% | >= 50% |
 
 ---
 
@@ -138,6 +146,25 @@ assert len(agent.trace.steps) == 3
 | `test_methodology_pipeline.py` | Paper/PDF 组合、PaperNote 和依赖注入 |
 | `test_methodology_flow.py` | 离线端到端分析与 JSON round-trip |
 
+## P3 测试映射
+
+| 测试文件 | 关注点 |
+|---|---|
+| `test_p3_schemas.py` | schema version、路径、hash、manifest、round-trip、大小写碰撞 |
+| `test_p3_validation.py` | AST/compile/import/entrypoint/config/test/manifest 静态校验 |
+| `test_p3_code_forger.py` | evidence 递归收集、结构化失败、repair 和 post-repair fail closed |
+| `test_p3_backends.py` | dry-run、本地 fixture 隔离、timeout/cancel、日志、metric、artifact、Docker 参数 |
+| `test_p3_pipeline.py` | backend 路由、experiment index、CLI 原子输出和非零返回码 |
+| `test_p3_docker_smoke.py` | 真实离线 Docker fixture；显式 `docker` marker，默认不应伪造通过 |
+
+P3 安全回归必须同时包含恶意输入和合法 control。重点证明：调用者代码不能进入
+宿主 fixture runner；篡改 evidence/manifest 被拒绝；非法 CodeForger 输出不会返回
+bundle；bundle 路径、artifact tar 和 Docker runtime profile 均 fail closed。
+
+`p3-security` CI job 始终运行离线 P3 测试。`p3-docker-smoke` 只有仓库变量
+`REPROFORGE_P3_PYTHON_CPU_IMAGE` 配置为审查过的精确 digest 时才运行。P0 package
+Docker build 不能替代 P3 sandbox smoke。
+
 ## 失败排查顺序
 
 ```text
@@ -151,13 +178,15 @@ PDF 测试失败
   → 区分 fitz 缺失、文件无效、抽取文本为空三种情况
 真实 Provider 失败
   → 最后再检查 key、base URL、model、网络和额度
+Docker smoke 被 skip/blocked
+  → 检查 daemon、docker extra、精确 digest 环境变量和本地镜像；不要改成 mutable tag
 ```
 
 不要在单元测试中临时接入真实 API；这会让测试变慢、产生费用并引入非确定性。
 
 ## 测试与实现的对应关系
 
-每个 P1 变更至少应回答一个对应测试问题：
+每个阶段变更至少应回答一个对应测试问题：
 
 | 变更 | 应补充/更新的测试 |
 |---|---|
@@ -168,6 +197,11 @@ PDF 测试失败
 | 修改 provider 优先级 | `test_openai_provider.py` 的环境隔离 fixture |
 | 修改 CLI 配置 | `test_cli.py` 的 dotenv、keyless、公网拒绝用例 |
 | 修改 pipeline 注入 | `test_pipeline.py` 的 fake dependency 断言 |
+| 修改 P3 schema/manifest | `test_p3_schemas.py` 的 tamper、round-trip 和版本反例 |
+| 修改 CodeForger | `test_p3_code_forger.py` 的非法响应、未知 evidence 和合法 control |
+| 修改 local runner | `test_p3_backends.py` 的 caller-code 拒绝、cwd 隔离、timeout/cancel/cleanup |
+| 修改 Docker 参数/采集 | Docker mock 安全参数回归 + 条件化真实 `docker` smoke |
+| 修改 P3 CLI | `test_p3_pipeline.py` 的原子输出、覆盖保护和失败返回码 |
 
 ## 示例：给 P1 PaperReader 写测试
 

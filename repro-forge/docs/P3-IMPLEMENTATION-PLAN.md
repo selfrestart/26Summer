@@ -1,10 +1,16 @@
 # P3 实施规划 — Auditable Code Generation and Sandboxed Experiments
 
-> **状态**：`Planned`（规划完成，尚未实现）
+> **状态**：`Complete`（P3-A/P3-B/P3-C 已验收）
 >
 > **前置输入**：P2 `MethodAnalysis`
 >
 > **核心输出**：`ReproductionBundle`、`ExperimentSpec`、`ExperimentRun`
+
+当前代码已经交付版本化 bundle、fail-closed `CodeForger`、静态校验、dry-run、
+固定仓库 fixture runner 和受限 Docker backend。2026-08-08 使用
+`python@sha256:9d7f287598e1a5a978c015ee176d8216435aaf335ed69ac3c38dd1bbb10e8d64`
+在 Docker Desktop Linux Engine 上通过真实 security smoke，覆盖成功、失败、
+timeout、metric/artifact 采集、容器 cleanup 和运行时安全控制，满足 P3-C 完成门。
 
 ## 1. 阶段目标
 

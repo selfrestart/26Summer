@@ -6,7 +6,9 @@
 > - [P1 设计论证](P1-DESIGN-RATIONALE.md)：解释为什么这样设计；
 > - [P1 技术参考](P1-TECHNICAL-REFERENCE.md)：列出 API、命令和配置速查。
 >
-> 本文只描述已经存在的 P1 代码。Methodologist 属于已完成的 P2；代码生成/实验属于 P3；验证属于 P4；记忆/知识图谱属于 P5；MCP/HTTP API/前端属于 P6，后续阶段尚未实现。
+> 本文只描述已经存在的 P1 代码。Methodologist 属于已完成的 P2；代码生成/实验
+> 属于已完成的 P3；验证属于 P4；记忆/知识图谱
+> 属于 P5；MCP/HTTP API/前端属于 P6，P4-P8 尚未实现。
 
 ---
 

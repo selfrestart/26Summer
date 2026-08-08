@@ -1,8 +1,8 @@
 # ReproForge P0–P8 总体路线图
 
-> **更新时间**：2026-08-06
+> **更新时间**：2026-08-08
 >
-> **当前状态**：P0、P1、P2 已完成；P3–P8 已规划但尚未实现
+> **当前状态**：P0、P1、P2、P3 已完成；P4–P8 已规划但尚未实现
 >
 > **状态判定原则**：目录、依赖声明、架构图和 `compose.future.yml` 不构成功能完成。只有代码、测试、用户入口、文档和阶段验收全部通过，阶段才能标记为 Complete。
 
@@ -31,7 +31,7 @@ flowchart LR
 | P0 | Complete | 项目如何可靠开发、测试、构建和发布？ | Core types、BaseAgent、Provider contract、CI/docs/package |
 | P1 | Complete | 如何把论文变成可追踪阅读笔记？ | `Paper`、`PaperChunk`、`PaperNote`、PaperPipeline、CLI |
 | P2 | Complete | 如何把方法学结论绑定到原文证据？ | `MethodAnalysis`、`EvidenceRef`、`EquationEvidence`、`ReportedClaimDraft` |
-| P3 | Planned | 如何把方法转换为可审计代码并隔离执行？ | `ReproductionBundle`、`ExperimentSpec`、`ExperimentRun` |
+| P3 | Complete | 如何把方法转换为可审计代码并隔离执行？ | `ReproductionBundle`、`ExperimentSpec`、`ExperimentRun` |
 | P4 | Planned | 如何检查数学与复现结果是否支持论文声明？ | `MathCheckReport`、`VerificationReport`、复现报告 |
 | P5 | Planned | 如何跨会话沉淀、关联和综述研究知识？ | Memory records、Knowledge Graph、`SurveyReport` |
 | P6 | Planned | 如何通过标准协议和用户界面使用能力？ | MCP、FastAPI jobs/SSE、React 工作台 |
@@ -122,9 +122,12 @@ Methodologist 从 `Paper` 和可选 `PaperNote` 抽取算法、架构、训练�
 
 详见 [P2 设计论证](P2-DESIGN-RATIONALE.md) 和 [P2 技术参考](P2-TECHNICAL-REFERENCE.md)。
 
-### P3：代码生成与隔离实验（规划）
+### P3：代码生成与隔离实验（完成）
 
-CodeForger 将 `MethodAnalysis` 转换为可审计源码、配置、依赖清单和测试；Experimentor 在最小安全沙箱中 dry-run/build/run，产出结构化日志、指标和 artifact manifest。P3 不判断论文是否复现成功。
+CodeForger、版本化 bundle、dry-run、固定 fixture runner 和 Docker backend 已完成。
+Docker 采用精确 digest、默认断网和 fail-closed 策略；真实 security smoke 已验证
+隔离、资源限制、metric/artifact 采集、timeout 和 cleanup。P3 不判断论文是否
+复现成功。
 
 详见 [P3 实施规划](P3-IMPLEMENTATION-PLAN.md)。
 
@@ -226,6 +229,6 @@ fixture 和局部质量指标。P8 负责统一 manifest、统计、历史基线
 
 ## 12. 当前优先级
 
-当前唯一允许推进准入并在转为 `Ready` 后进入实现的下一阶段是 P3。P4–P8 的规划
-用于冻结边界、减少返工，不表示可以绕过前置阶段并行宣称完成。若某个后续基础
-能力必须提前实现，只能作为前置阶段的最小内部组件，不能提前扩大阶段状态。
+当前可进入 Definition of Ready 评审的下一阶段是 P4。P5–P8 的规划用于冻结边界、
+减少返工，不表示可以绕过前置阶段并行宣称完成。若某个后续基础能力必须提前实现，
+只能作为前置阶段的最小内部组件，不能提前扩大阶段状态。

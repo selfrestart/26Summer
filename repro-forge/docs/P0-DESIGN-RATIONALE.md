@@ -6,11 +6,12 @@
 >
 > **行文原则**: 每个技术选择遵循 **问题 → 备选方案 → 决策依据 → 代价认知** 四段式论证。
 >
-> **真实性边界**：本文同时包含当前实现决策和目标架构论证。P0、P1 已完成，
-> P2 已完成；P3–P8 仍是规划。凡涉及 CodeForger、Experimentor、
-> MathChecker、Verifier、长期 Memory、知识图谱、MCP/API/UI、Guardrails、
-> Benchmark 或完整 OpenTelemetry 的内容，均应按对应阶段的设计方案理解，
-> 不能作为当前代码已实现的陈述。统一状态见 [P0–P8 总体路线图](ROADMAP.md)。
+> **真实性边界**：本文同时包含当前实现决策和目标架构论证。P0、P1、P2 已完成；
+> P3 已完成，P3-A/P3-B/P3-C 均通过验收；P4–P8 仍是规划。
+> 本文早期的 P3 草图应以 [P3 设计论证](P3-DESIGN-RATIONALE.md) 和
+> [P3 技术参考](P3-TECHNICAL-REFERENCE.md) 为准。MathChecker、Verifier、长期
+> Memory、知识图谱、MCP/API/UI、Guardrails、Benchmark 或完整 OpenTelemetry
+> 仍不能作为当前代码已实现的陈述。统一状态见 [P0–P8 总体路线图](ROADMAP.md)。
 
 ---
 
@@ -717,7 +718,11 @@ async def generate_with_fallback(request, providers):
 
 ---
 
-## 第十三章　P3 规划：实验执行引擎
+## 第十三章　P3 原始规划与当前实现映射：实验执行引擎
+
+> 本章保留 P0 时期的设计推导。当前 P3 实现采用版本化
+> `ReproductionBundle`/`ExperimentRun`、固定 fixture ID 边界和 runtime profile，
+> 具体代码与安全门以 P3 专项文档为准。
 
 ### 13.1 五层执行后端
 
@@ -749,15 +754,15 @@ class ColabBackend(BaseExecutionBackend):
     # 推送代码到 Colab + 触发执行 + 拉取结果
 ```
 
-以上类是设计草图，不是当前代码。P3 只有在 manifest、超时、资源限制、默认
-断网、受限挂载、secret 清理和 cleanup 均有测试后，才能宣称 Docker execution
-完成；否则最多只完成 dry-run。
+以上类是早期设计草图，不是当前类名。P3-A/P3-B 已实现 bundle、manifest、
+dry-run 和固定 fixture runner；Docker backend 也已实现最低控制和 mock 回归，
+并已在真实 daemon 上通过审查 digest 的 security smoke，P3-C 已完成。
 
 ### 13.3 面试话术
 
-> "P3 计划先交付可审计 bundle、dry-run 和受限 Docker CPU 执行。远程 GPU
-> 后端会在本地契约、凭据和计费风险处理成熟后再评估。当前没有 Experimentor
-> 后端实现，因此不会把设计草图描述成已运行能力。"
+> "P3 已交付可审计 bundle、fail-closed CodeForger、dry-run 和固定 fixture
+> runner；受限 Docker backend 已通过 mock 与真实 security smoke。远程 GPU
+> 后端继续延后。"
 
 ---
 
@@ -768,8 +773,9 @@ class ColabBackend(BaseExecutionBackend):
 > "我开发了 ReproForge 的前三个阶段：P0 建立类型、ReAct、Provider、测试、
 > CI 和包构建基线；P1 把本地 PDF/arXiv 转成可追踪的 `PaperNote`，支持
 > OpenAI-compatible/DeepSeek Provider、token-aware chunking、pipeline 和 CLI；
-> P2 再把原文变成带来源校验的 `MethodAnalysis`。当前基线是 175 个测试、
-> 86.34% 覆盖率，Ruff 和 mypy 已通过；P3-P8 仍按阶段门规划。"
+> P2 再把原文变成带来源校验的 `MethodAnalysis`；P3 已实现可审计 bundle、
+> fail-closed CodeForger、dry-run、固定 fixture runner 和真实 Docker security gate。
+> 精确测试数和覆盖率以当前 CI 输出为准，P4-P8 继续按阶段门规划。"
 
 ### 14.2 HR 面试版（30 秒）
 
@@ -809,7 +815,7 @@ class ColabBackend(BaseExecutionBackend):
 | PapersWithCode | ✅ | ❌ | ❌ | ❌ |
 | PaperQA | ❌ | ❌ | ❌ | ❌ |
 | SWE-bench | ❌ | ❌ | ✅ | ❌ |
-| **ReproForge** | Planned (P5) | Planned (P3) | Planned (P3) | Planned (P4) |
+| **ReproForge** | Planned (P5) | Complete (P3) | Complete; digest-pinned Docker (P3) | Planned (P4) |
 
 ## 附录 C：推荐阅读
 

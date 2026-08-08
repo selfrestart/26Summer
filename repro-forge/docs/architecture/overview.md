@@ -1,14 +1,14 @@
 # 架构总览
 
-本文把 **当前可运行的 P1/P2 架构** 与 **P3–P8 目标架构** 分开描述。判断功能是否完成，应以当前代码、测试和阶段技术参考为准，而不是以空目录或路线图图示为准。
+本文把 **当前可运行的 P1/P2 与部分 P3 架构** 和 **P4–P8 目标架构** 分开描述。判断功能是否完成，应以当前代码、测试和阶段技术参考为准，而不是以空目录或路线图图示为准。
 
 ## 当前状态
 
 | 层级 | 已实现 | 尚未实现 |
 |---|---|---|
 | 用户入口 | Python API、`repro-forge` CLI | Web UI、REST/SSE API |
-| 领域能力 | PDF/arXiv、论文模型、分块、PaperReader、PaperNote、Methodologist、MethodAnalysis | 代码生成、实验、核验 |
-| Agent | `PaperReader` | Methodologist、MathChecker、CodeForger、Experimentor、Verifier |
+| 领域能力 | PDF/arXiv、论文模型、分块、PaperReader、PaperNote、Methodologist、MethodAnalysis、P3 bundle/静态校验/dry-run/固定 fixture | P4 核验；P3-C 真实 Docker smoke |
+| Agent | `PaperReader`、`Methodologist`、`CodeForger`、`Experimentor` | MathChecker、Verifier、多 Agent 编排 |
 | Provider | OpenAI-compatible，包括 DeepSeek 和本地 endpoint | 独立 Anthropic/本地 Provider 实现 |
 | 基础设施 | P0 core/types/trace、质量工具链 | Memory、知识图谱、MCP、Guardrails、Observability |
 
@@ -93,7 +93,9 @@ PaperReader 使用三个本地只读工具：
 
 ### 5. CLI (`cli.py`)
 
-CLI 暴露版本、能力清单、PDF 阅读和 Paper JSON 阅读。它从当前目录 `.env` 加载配置，远程 endpoint 要求 key，本地/私有 endpoint 可以 keyless 运行。
+CLI 暴露版本、能力清单、PDF/Paper JSON 阅读、方法分析，以及 P3 bundle 生成、
+dry-run/Docker 执行和固定 fixture 命令。它从当前目录 `.env` 加载配置，远程
+endpoint 要求 key，本地/私有 endpoint 可以 keyless 运行。
 
 ## 依赖方向
 
@@ -131,7 +133,7 @@ read_arxiv → normalize ID → download PDF → parse → read → PaperNote
 read-json → Paper.model_validate_json → PaperReader.read → PaperNote
 ```
 
-## P2–P8 目标架构
+## P3 当前延伸与 P4–P8 目标架构
 
 ReproForge 的长期目标仍是多 Agent 复现平台：
 
@@ -146,7 +148,9 @@ flowchart LR
     VF --> REPORT[Reproduction Report]
 ```
 
-Memory/ChromaDB、Neo4j、MCP、FastAPI、前端、Guardrails、Evaluation 和 Observability 都属于后续阶段。相应文档当前用于记录设计方向，不构成已实现声明。
+图中的 CodeForger/Experimentor 已有 P3 实现，但 Docker 路径仍受 P3-C gate。
+Memory/ChromaDB、Neo4j、MCP、FastAPI、前端、Guardrails、Evaluation 和
+Observability 都属于后续阶段。相应文档当前用于记录设计方向，不构成已实现声明。
 
 ## P0-P8 阶段架构
 
@@ -162,6 +166,8 @@ P8 benchmark/telemetry/scorecard。完整阶段门见 [总体路线图](../ROADM
 - [P0-P8 总体路线图](../ROADMAP.md)
 - [P2 实施规划](../P2-IMPLEMENTATION-PLAN.md)
 - [P3 实施规划](../P3-IMPLEMENTATION-PLAN.md)
+- [P3 设计论证](../P3-DESIGN-RATIONALE.md)
+- [P3 技术参考](../P3-TECHNICAL-REFERENCE.md)
 - [P4 实施规划](../P4-IMPLEMENTATION-PLAN.md)
 - [P5 实施规划](../P5-IMPLEMENTATION-PLAN.md)
 - [P6 实施规划](../P6-IMPLEMENTATION-PLAN.md)

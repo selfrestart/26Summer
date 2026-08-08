@@ -6,9 +6,10 @@
 >
 > **行文原则**: 每个配置 ← 路径 + 命令 + 输出 → 可复现的操作步骤
 >
-> **阶段边界**：本文保留 P0 工程基线，并同步记录当前 P1/P2 能力和 P3–P8
-> 规划入口。P0、P1、P2 已完成；空包、可选依赖和未来服务模板不表示 P3–P8
-> 已实现。统一状态以 [P0–P8 总体路线图](ROADMAP.md) 为准。
+> **阶段边界**：本文保留 P0 工程基线。P0、P1、P2、P3 已完成，
+> 其当前 API/配置以 [P3 技术参考](P3-TECHNICAL-REFERENCE.md) 为准；P4–P8
+> 仍为规划。空包、可选依赖和未来服务模板仍不表示对应阶段已实现。统一状态以
+> [P0–P8 总体路线图](ROADMAP.md) 为准。
 
 ---
 
@@ -186,7 +187,7 @@ ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=claude-sonnet-4-20250514
 
 # 执行后端
-EXECUTION_BACKEND=dryrun               # P3 规划: dryrun | local-subprocess | docker
+EXECUTION_BACKEND=dryrun               # P3: bundle 支持 dryrun/docker；local-subprocess 仅固定 fixture
 
 # 日志
 LOG_LEVEL=INFO
@@ -391,7 +392,7 @@ dev = ["pytest>=8.2.0", "ruff>=0.5.0", ...]
 | P1 已实现 | DeepSeek | `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` | CLI 自动识别的 DeepSeek 配置 |
 | 预留 | Anthropic | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | 依赖已声明，当前没有对应 Provider 实现 |
 | P5 规划 | Memory/KG | `CHROMA_*`, `NEO4J_*` | 向量索引、知识图谱和显式镜像引用 |
-| P3 规划 | Execution | `EXECUTION_BACKEND`, `MLFLOW_TRACKING_URI` | dry-run/local fixture/Docker 执行和实验记录 |
+| P3 已完成 | Execution | `EXECUTION_BACKEND`, `REPROFORGE_P3_PYTHON_CPU_IMAGE` | dry-run/local fixture 和真实 Docker smoke 已验证；每个运行环境仍需审查精确 digest；MLflow 延后 |
 | 延后 | Remote execution | `SSH_*`, `COLAB_*`, `VASTAI_*` | P3 首批不实现，变量存在不表示 adapter 可用 |
 | P6 规划 | API | `SERVER_*`, `ENABLE_CORS`, `ALLOWED_ORIGINS` | FastAPI 服务配置 |
 | P8 规划 | Observability/Evaluation | `OTEL_*`, `LOG_LEVEL`, `EVALUATION_*` | 遥测、成本和评测配置 |
@@ -524,13 +525,13 @@ class BaseProvider(ABC):
 
 **LLMResponse 字段**：`content`, `model`, `finish_reason`, `usage`, `raw`
 
-### 5.5-5.14 模块概览（P1/P2 已实现，P3-P8 待实现）
+### 5.5-5.14 模块概览（P1-P3 已完成，P4-P8 待实现）
 
 | 模块 | P0 状态 | P1-P8 规划 |
 |------|---------|-----------|
-| `agents/` | P1：`PaperReader`；P2：`Methodologist` | P3-P4：其余专项 Agent |
-| `paper/` | P1：PDF/arXiv 解析、分块、`PaperPipeline`；P2：`MethodologyPipeline` 与 evidence view | P3：代码与实验 |
-| `reproduction/` | 空包 | P3-P4：复现引擎 |
+| `agents/` | P1：`PaperReader`；P2：`Methodologist` | P3 CodeForger 位于 `reproduction/code_gen`；P4 专项 Agent 待实现 |
+| `paper/` | P1：PDF/arXiv 解析、分块、`PaperPipeline`；P2：`MethodologyPipeline` 与 evidence view | P3 通过公开 `MethodAnalysis` 消费，不反向修改 paper 私有状态 |
+| `reproduction/` | P3：bundle/schema、CodeForger、静态校验、dry-run、固定 fixture runner、Docker backend 和真实 security smoke | P4 核验 |
 | `memory/` | 空包 | P5：版本化 artifact、Episodic/Semantic memory |
 | `knowledge/` | 空包 | P5：知识图谱 |
 | `mcp/` | 空包 | P6：MCP Server/Client |
@@ -699,7 +700,8 @@ $ make test-cov
 
 当前 `Dockerfile` 是 Python 3.13 两阶段**包镜像**：builder 构建 wheel，runtime
 安装 wheel、切换到非 root 用户，并以 `repro-forge` CLI 为入口。它没有启动
-FastAPI、Neo4j、ChromaDB 或 Jaeger，也不代表 P3 实验沙箱已经实现。
+FastAPI、Neo4j、ChromaDB 或 Jaeger，也不是 P3 实验 runtime 镜像；P3 Docker
+backend 只接受另外配置并审查的精确 digest。
 
 ```bash
 make docker-build
@@ -708,7 +710,8 @@ docker run --rm repro-forge:p0 capabilities
 ```
 
 镜像 tag 中的 `p0` 是现有 Makefile 的历史命名；镜像实际打包当前工作树中的
-P0/P1 Python 包。P3 实验镜像和 P6 API 镜像必须在对应阶段单独设计。
+P0-P3 Python 包。P3 实验 runtime 镜像和 P6 API 镜像必须独立管理，不能把包镜像
+自动信任为 sandbox 镜像。
 
 ### 8.2 `compose.future.yml` 服务模板
 

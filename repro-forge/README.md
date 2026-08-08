@@ -35,14 +35,16 @@ ReproForge aims to become a multi-agent framework for reading, understanding, an
 > the PaperReader agent, provider injection, and the `PaperPipeline`/CLI.
 > Phase status follows the [roadmap lifecycle](docs/ROADMAP.md#3-状态生命周期与实施准入).
 > P2 adds evidence-grounded methodology extraction through `MethodAnalysis` and
-> `MethodologyPipeline`; code generation and execution remain P3+ work.
+> `MethodologyPipeline`. P3 is complete: contracts, fail-closed code generation,
+> dry-run, immutable local fixtures, and digest-pinned Docker execution have
+> passed offline and real security gates.
 
 | Phase | Status | Capability |
 |-------|--------|------------|
 | **P0 Engineering Core** | Complete | Typed ReAct runtime, provider contract, deterministic tests, CI, docs, package and CLI image |
 | **P1 Paper Reading** | Complete | Local PDF/arXiv ingestion, token-aware chunking, PaperReader, `PaperNote`, pipeline and CLI |
 | **P2 Method Extraction** | Complete | Versioned `MethodAnalysis` with source-bound evidence, equation capture status and raw claim drafts |
-| **P3 Code and Experiments** | Planned | Auditable `ReproductionBundle`, dry-run and minimally safe sandbox execution |
+| **P3 Code and Experiments** | Complete | Auditable bundles, fail-closed `CodeForger`, dry-run, fixed fixtures, and digest-pinned Docker execution |
 | **P4 Verification** | Planned | MathChecker, claim/metric alignment and `VerificationReport` |
 | **P5 Research Memory** | Planned | Versioned artifact repository, ChromaDB/Neo4j indexes and SurveyScribe |
 | **P6 Product Surface** | Planned | Shared application service, MCP, FastAPI jobs/SSE and React workbench |
@@ -108,17 +110,24 @@ print(note.summary())
 For an offline run, use `uv run python examples/read_paper.py`, which uses a
 deterministic provider and does not require a PDF or API key.
 
-### Run a Full Reproduction
+### Generate and dry-run a P3 bundle
 
-> **Planned API:** reproduction is scheduled for P3/P4 and is not implemented
-> in the current P2 release. P2 produces the evidence-grounded
-> `MethodAnalysis` consumed by P3.
+P3 can generate a versioned bundle and validate it without executing generated
+code. P4 result verification is still planned.
 
-No copy-paste API is shown for this workflow because those imports do not exist
-yet. The planned sequence is P2 `MethodAnalysis` → P3 `ReproductionBundle` and
-`ExperimentRun` → P4 `VerificationReport`. See the [P2](docs/P2-IMPLEMENTATION-PLAN.md),
-[P3](docs/P3-IMPLEMENTATION-PLAN.md), and [P4](docs/P4-IMPLEMENTATION-PLAN.md)
-plans for proposed contracts and completion gates.
+```python
+from repro_forge.reproduction import ReproductionPipeline
+
+pipeline = ReproductionPipeline(provider=provider)
+bundle = await pipeline.generate(method_analysis)
+run = await pipeline.execute(bundle, backend="dryrun")
+assert run.status == "success"
+```
+
+Docker execution is fail-closed. It requires the optional `docker` extra, a
+running daemon, and `REPROFORGE_P3_PYTHON_CPU_IMAGE` set to an exact reviewed
+`repository@sha256:...` reference that is already present locally. See the
+[P3 technical reference](docs/P3-TECHNICAL-REFERENCE.md).
 
 ---
 
@@ -128,7 +137,7 @@ plans for proposed contracts and completion gates.
 flowchart LR
     INPUT["PDF / arXiv"] --> P1["P1 complete: Paper + PaperNote"]
     P1 --> P2["P2 complete: MethodAnalysis + evidence"]
-    P2 --> P3["P3 planned: Bundle + ExperimentRun"]
+    P2 --> P3["P3 complete: Bundle + ExperimentRun"]
     P3 --> P4["P4 planned: VerificationReport"]
     P1 --> P5["P5 planned: Memory / Graph / Survey"]
     P2 --> P5
@@ -160,16 +169,16 @@ Full documentation is available in the repository's [docs directory](https://git
 | P0 | ✅ Complete | Core abstractions, tests, packaging, CI, docs build, Docker package image |
 | P1 | ✅ Complete | PaperReader, PDF/arXiv parsers, chunker, provider boundary, pipeline, CLI |
 | P2 | ✅ Complete | Methodologist, evidence-grounded method/architecture/training extraction |
-| P3 | 📋 Planned | Auditable CodeForger bundles, dry-run and sandboxed experiment execution |
+| P3 | ✅ Complete | Contracts, CodeForger, dry-run, fixed fixture runner and real digest-pinned Docker security smoke |
 | P4 | 📋 Planned | MathChecker, claim/metric alignment, Verifier and reproduction reports |
 | P5 | 📋 Planned | Versioned memory, knowledge graph and evidence-grounded surveys |
 | P6 | 📋 Planned | Shared application service, MCP, FastAPI jobs/SSE and React workbench |
 | P7 | 📋 Planned | Identity, policy engine, guardrails, execution hardening and audit |
 | P8 | 📋 Planned | Benchmarks, OpenTelemetry, cost tracking and release scorecards |
 
-`Planned` means the scope is documented, not that implementation may begin or
-that a placeholder package/configuration is usable. See the roadmap's
-Definition of Ready, stage gates, and safe stopping milestones.
+P3 completion is bounded to local CPU execution with an operator-reviewed exact
+image digest. It does not enable mutable tags, remote/GPU backends, networked
+experiments, or P4 claim verification.
 
 ---
 

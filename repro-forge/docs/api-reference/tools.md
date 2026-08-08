@@ -1,4 +1,4 @@
-# Tools API（P1 范围）
+# Tools API（P1-P3 当前范围）
 
 PaperReader 当前内置三个进程内只读工具：`list_sections`、`read_section` 和
 `search_paper`。它们由 `repro_forge.agents.paper_reader` 管理，不是 MCP 工具
@@ -10,7 +10,7 @@ PaperReader 当前内置三个进程内只读工具：`list_sections`、`read_se
 |------|----------|------|
 | P1 | 论文章节列举、读取和全文搜索 | 已实现，进程内只读 |
 | P2 | `PaperEvidenceView` 只读 evidence view，支持方法学证据定位 | 已实现 |
-| P3 | 生成文件、静态检查、dry-run 和受限 sandbox backend | 规划，必须满足最低安全门 |
+| P3 | CodeForger、bundle/manifest、静态检查、dry-run、固定 fixture runner、Docker backend | 已完成；离线回归和真实 Docker security smoke 均通过 |
 | P4 | 公式、claim、metric 和 run artifact 查询 | 规划，默认只读 |
 | P5 | artifact、向量索引、知识图谱和 survey 检索 | 规划，写入必须保留 provenance |
 | P6 | 将稳定能力映射为 MCP tools/resources | 规划，共享 application service |

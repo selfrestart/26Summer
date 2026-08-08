@@ -4,7 +4,9 @@
 >
 > **范围**：PDF/arXiv 输入、结构化论文模型、token-aware 分块、PaperReader、OpenAI-compatible Provider、PaperPipeline 与 CLI。
 >
-> **不在 P1 范围内**：P2 方法抽取已作为独立阶段完成；P3 代码与实验、P4 核验、P5 记忆/知识图谱、P6 MCP/API/UI、P7 Guardrails 和 P8 Evaluation/Observability 仍在规划。
+> **不在 P1 范围内**：P2 方法抽取和 P3 代码/实验已作为独立阶段完成；
+> P4 核验、P5 记忆/知识图谱、P6 MCP/API/UI、
+> P7 Guardrails 和 P8 Evaluation/Observability 仍在规划。
 
 本文沿用 P0 文档的论证方式。每个决策都回答四个问题：**遇到了什么问题、有哪些备选方案、为什么做当前选择、选择带来了什么代价**。它既是技术评审材料，也是面试时解释 P1 工作的参考答案。
 

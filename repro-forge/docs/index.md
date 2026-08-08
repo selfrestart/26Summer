@@ -2,16 +2,20 @@
 
 Welcome to the ReproForge documentation. ReproForge is being built as a
 multi-agent framework for computer-science paper reading and reproduction. The
-current release is a working P2 paper-reading and methodology system; the
-full reproduction platform remains the roadmap target.
+current release includes the working P1/P2 paper and methodology system plus
+the complete P3 bundle and constrained-execution slice. P4 verification and the
+full platform remain roadmap targets.
 
 !!! note "Current project status"
 
-    P0, P1 and P2 are implemented. P1 provides PDF/arXiv paper ingestion,
+    P0, P1 and P2 are complete. P1 provides PDF/arXiv paper ingestion,
     token-aware chunking, the PaperReader agent, provider injection, and a
     `PaperPipeline`/CLI surface. P2 adds the `Methodologist`, `PaperEvidenceView`,
-    `MethodAnalysis` and methodology CLI surface. Reproduction execution,
-    knowledge graph, API, and frontend remain roadmap work.
+    `MethodAnalysis` and methodology CLI surface. P3 adds versioned reproduction
+    bundles, fail-closed CodeForger generation, static validation, dry-run, and
+    a maintainer-owned local fixture runner and digest-pinned Docker backend.
+    The real Docker security smoke has passed. P4 verification, knowledge graph,
+    API, and frontend remain roadmap work.
 
     See [P1 Design Rationale](P1-DESIGN-RATIONALE.md) for the decisions behind
     the implementation and [P1 Technical Reference](P1-TECHNICAL-REFERENCE.md)
@@ -20,16 +24,20 @@ full reproduction platform remains the roadmap target.
     [P1 Implementation Guide](P1-IMPLEMENTATION-GUIDE.md).
 
     P2 is complete and produces a validated `MethodAnalysis` with source-bound
-    evidence, explicit equation capture status, and raw reported-claim drafts;
-    code generation remains P3 and knowledge-graph writes remain P5. See the
-    [P2 technical reference](P2-TECHNICAL-REFERENCE.md) for the public API.
+    evidence, explicit equation capture status, and raw reported-claim drafts.
+    P3 consumes this contract and produces `ReproductionBundle` and
+    `ExperimentRun`; knowledge-graph writes remain P5. See the
+    [P2 technical reference](P2-TECHNICAL-REFERENCE.md) for the input contract
+    and the [P3 technical reference](P3-TECHNICAL-REFERENCE.md) for the current
+    execution boundary and Docker gate.
 
 ## What is ReproForge?
 
 ReproForge addresses the **reproducibility crisis** in computer science. P1
-implements the paper-reading slice and P2 adds evidence-grounded methodology
-analysis. The six-agent pipeline described below is the target architecture;
-P3+ components remain roadmap work.
+implements paper reading, P2 adds evidence-grounded methodology analysis, and
+P3 is implementing auditable code generation plus constrained experiment
+execution. The six-agent pipeline described below remains partially implemented;
+P4-P8 are roadmap work.
 
 <div class="grid cards" markdown>
 
@@ -42,12 +50,13 @@ P3+ components remain roadmap work.
 
     [:octicons-arrow-right-24: P1 quickstart](getting-started/quickstart.md)
 
-- :material-flask-round-bottom: **Paper Reproduction (Roadmap)**
+- :material-flask-round-bottom: **Paper Reproduction (P3 Complete)**
 
     ---
 
-    From algorithm to code to verified results. Generated code runs in
-    Docker sandboxes with automatic metric comparison against claimed results.
+    Generate versioned code bundles, validate them without execution, and run
+    repository fixtures locally or execute offline in digest-pinned Docker. Automatic
+    claim/metric comparison belongs to P4.
 
     [:octicons-arrow-right-24: Reproduce a paper](user-guide/reproduction.md)
 
@@ -60,7 +69,7 @@ P3+ components remain roadmap work.
 
     [:octicons-arrow-right-24: Explore knowledge graph](architecture/knowledge-graph.md)
 
-- :material-robot: **Agent System (P1/P2 Current)**
+- :material-robot: **Agent System (P1-P3 Current)**
 
     ---
 
@@ -78,18 +87,18 @@ P3+ components remain roadmap work.
 
     [:octicons-arrow-right-24: MCP Integration](architecture/mcp-integration.md)
 
-- :material-shield-check: **Safety & Guardrails (Roadmap)**
+- :material-shield-check: **Execution Safety (P3 Current, P7 Roadmap)**
 
     ---
 
-    Input/output validation, code security review, plagiarism detection, and
-    result plausibility checks to ensure responsible agent behavior.
+    P3 enforces path/manifest validation and a minimum Docker sandbox. P7 will
+    add platform-wide identity, policy, audit, plagiarism, and output guardrails.
 
     [:octicons-arrow-right-24: Security](architecture/reproduction-pipeline.md)
 
 </div>
 
-## Current P1/P2 Data Flow
+## Current P1-P3 Data Flow
 
 ```mermaid
 flowchart LR
@@ -103,11 +112,17 @@ flowchart LR
     NOTE -. optional hint .-> METHOD[Methodologist]
     EVIDENCE --> METHOD
     METHOD --> ANALYSIS[MethodAnalysis JSON]
+    ANALYSIS --> FORGER[CodeForger]
+    FORGER --> BUNDLE[ReproductionBundle JSON]
+    BUNDLE --> DRY[Dry-run / fixed fixture runner]
+    BUNDLE -. reviewed digest + daemon .-> DOCKER[Docker backend]
+    DRY --> RUN[ExperimentRun JSON]
+    DOCKER --> RUN
 ```
 
 ## Target Architecture Concepts
 
-The following concepts combine the current P1/P2 surface with the planned end
+The following concepts combine the current P1-P3 surface with the planned end
 state. Use the status table to distinguish implemented and planned components.
 
 ReproForge is built around five core abstractions:
@@ -136,24 +151,25 @@ Three-tier memory architecture:
 | Episodic | ChromaDB vector store | Past paper analyses & experiment history |
 | Semantic | Neo4j knowledge graph | Cross-paper method relationships & benchmarks |
 
-### 3. Tools (P1/P2 Current, P3-P7 Planned Evolution)
+### 3. Tools (P1-P3 Current, P4-P7 Planned Evolution)
 
 P1 PaperReader owns three in-process read-only tools. Later phases expand the
 tool surface only after their domain contracts are stable:
 
 - **P2**: evidence lookup for methodology extraction (implemented by `PaperEvidenceView`)
-- **P3/P4**: constrained execution and verification tools
+- **P3**: static validation, dry-run, fixed fixture runner, and digest-controlled Docker execution
+- **P4**: claim/metric and mathematical verification tools
 - **P5**: artifact, vector, graph, and survey retrieval
 - **P6**: MCP tools/resources backed by the shared application service
 - **P7**: identity, policy, approval, and audit wrappers
 
-### 4. Pipeline (P2 Current, P3-P4 Planned)
+### 4. Pipeline (P3 Current, P4 Planned)
 
 The reproduction pipeline is a directed workflow:
 
 ```text
 Paper -> MethodAnalysis -> Code Generation -> Docker Execution -> Verification -> Report
-        P2 complete       P3 planned          P3 planned          P4 planned
+        P2 complete       P3 complete         P3 complete         P4 planned
 ```
 
 ### 5. Evaluation (P8 Planned)
@@ -172,7 +188,7 @@ Built-in benchmarks measure agent performance:
 | P0 (Core and infrastructure) | Complete |
 | P1 (PaperReader) | Complete |
 | P2 (Methodologist + evidence-grounded methodology extraction) | Complete |
-| P3 (Auditable code + sandboxed experiments) | Planned |
+| P3 (Auditable code + sandboxed experiments) | Complete |
 | P4 (Math + claim/result verification) | Planned |
 | P5 (Memory + knowledge graph + survey) | Planned |
 | P6 (Application service + MCP + API + workbench) | Planned |

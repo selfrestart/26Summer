@@ -88,8 +88,11 @@ uv sync --locked --extra arxiv --group dev
 ```
 
 P2 evidence-grounded methodology extraction is available through
-`MethodologyPipeline`; knowledge-graph writes remain P5, while code generation
-and experiment execution begin in P3. See the [P2 technical reference](../P2-TECHNICAL-REFERENCE.md).
+`MethodologyPipeline`. P3 provides bundle generation, dry-run, a fixed fixture
+runner, and digest-pinned Docker execution with a completed real security smoke.
+Knowledge-graph writes remain P5. See the
+[P2 technical reference](../P2-TECHNICAL-REFERENCE.md) and
+[P3 technical reference](../P3-TECHNICAL-REFERENCE.md).
 
 ## Inspect the result
 

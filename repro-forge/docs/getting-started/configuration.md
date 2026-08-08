@@ -1,6 +1,6 @@
-# P1 Configuration
+# P1-P3 Configuration
 
-Core configuration is contained in `pyproject.toml`; P1 integrations are
+Core configuration is contained in `pyproject.toml`; P1/P3 integrations are
 optional and activate only when their extra is installed. Runtime credentials
 are read from process environment variables and, for the CLI only, a `.env`
 file in the current working directory.
@@ -19,6 +19,7 @@ file in the current working directory.
 | Type checking | mypy strict mode |
 | Tests | pytest with branch coverage and a 65% minimum |
 | Documentation | MkDocs Material |
+| P3 Docker image | `REPROFORGE_P3_PYTHON_CPU_IMAGE`; exact reviewed `repository@sha256:...` only |
 
 ## Configuration precedence
 
@@ -69,14 +70,17 @@ key. Variables in `.env.example` are staged as follows:
 
 | Variables | Phase | Purpose |
 |-----------|-------|---------|
-| `EXECUTION_*`, `MLFLOW_*` | P3 | Sandbox execution and experiment records |
+| `EXECUTION_BACKEND` | P3 | CLI/config default naming; generated bundles support `dryrun`/`docker`, local subprocess is fixture-only |
+| `REPROFORGE_P3_PYTHON_CPU_IMAGE` | P3 | Exact reviewed Docker image digest; backend never pulls mutable tags automatically |
+| `MLFLOW_*` | Deferred | MLflow is not the P3 source of truth; current records use `ExperimentRun` JSON |
 | `CHROMA_*`, `NEO4J_*` | P5 | Rebuildable semantic and graph indexes, including explicit image references |
 | `SERVER_*`, CORS settings | P6 | FastAPI jobs/SSE service |
 | `OTEL_*`, `EVALUATION_*` | P8 | Telemetry, benchmarks, cost and release gates |
 
-Setting a reserved variable does not enable its service in P1. The corresponding
-code, tests, adapters, migrations, user entry point, and phase gate must all exist
-before the capability can be marked complete.
+Setting a variable does not by itself transfer P3's acceptance evidence to a new
+runtime. Installing the Docker extra or setting an image digest still requires a
+running daemon, a locally present reviewed image, and rerunning the real security smoke. Later services
+also require their code, tests, adapters, migrations, user entry point, and phase gate.
 
 Future local services use conservative defaults: P6 binds to `127.0.0.1` with one
 worker and CORS disabled; `compose.future.yml` binds database/telemetry ports to

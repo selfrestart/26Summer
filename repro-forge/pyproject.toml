@@ -176,6 +176,7 @@ markers = [
     "integration: integration tests requiring services",
     "e2e: end-to-end tests",
     "llm: tests requiring LLM API calls (disabled by default)",
+    "docker: tests requiring a configured Docker daemon and reviewed image digest",
 ]
 
 [tool.coverage.run]

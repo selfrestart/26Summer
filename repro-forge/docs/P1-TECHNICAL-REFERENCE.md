@@ -25,7 +25,9 @@ PDF / arXiv ID → parse → chunk → read → PaperNote
 | 真实 LLM | `OpenAIProvider` | 自动构造 Provider | `openai` extra |
 | 离线测试 | 注入 `FakeLLMProvider` | 示例脚本 | 无 key |
 
-P1 不提供方法抽取、代码生成、实验执行、长期记忆、知识图谱、MCP、HTTP API 或前端服务。
+P1 本身不提供方法抽取、代码生成、实验执行、长期记忆、知识图谱、MCP、HTTP API
+或前端服务。仓库后续已交付 P2，并正在实施 P3；对应能力应使用各阶段技术参考，
+不能反向视为 P1 能力。
 
 ## 2. 目录与职责
 
@@ -44,7 +46,8 @@ repro_forge/
 └── cli.py                       # repro-forge 命令行入口
 ```
 
-`memory/`、`knowledge/`、`reproduction/`、`mcp/`、`api/` 等目录当前只是后续阶段的包占位。
+`reproduction/` 现包含 P3 实现；`memory/`、`knowledge/`、`mcp/`、`api/` 等目录
+仍是后续阶段占位。P3 入口见 [P3 技术参考](P3-TECHNICAL-REFERENCE.md)。
 
 ## 3. 安装与可选 extras
 

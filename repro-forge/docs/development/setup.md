@@ -1,6 +1,6 @@
 # P1 开发环境与配置
 
-> **状态**：✅ P0 基础设施与 P1 论文阅读链路已完成
+> **状态**：✅ P0-P3 已完成；P4-P8 规划中
 >
 > 本页提供开发者入口；完整的 API、环境变量、CLI 和故障排查见
 > [P1 Technical Reference](../P1-TECHNICAL-REFERENCE.md)。P0 的工程决策见
@@ -19,9 +19,10 @@ P1 在 P0 的 `BaseAgent`、Provider 契约、uv/ruff/mypy/pytest 工具链之�
 - `OpenAIProvider`：OpenAI、DeepSeek 和其他兼容 endpoint；
 - `PaperPipeline` 与 `repro-forge` CLI。
 
-Methodologist 属于 P2；代码生成和 Docker 实验属于 P3；MathChecker/Verifier
+Methodologist 属于已完成的 P2。P3 已提供 CodeForger、bundle、dry-run 和固定
+fixture runner，Docker backend 已通过真实 security smoke。MathChecker/Verifier
 属于 P4；Memory/Knowledge Graph 属于 P5；MCP/FastAPI/前端属于 P6；
-Guardrails 属于 P7；Evaluation/Observability 属于 P8。它们当前均为规划。
+Guardrails 属于 P7；Evaluation/Observability 属于 P8，P4-P8 当前为规划。
 
 ## 先决条件
 

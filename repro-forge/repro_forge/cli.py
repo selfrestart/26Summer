@@ -1,4 +1,4 @@
-"""Command-line interface for the P1 paper-reading workflow."""
+"""Command-line interface for the ReproForge P1-P3 workflows."""
 
 from __future__ import annotations
 
@@ -21,12 +21,14 @@ from repro_forge.providers.base import BaseProvider
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="repro-forge",
-        description="Parse and read computer-science papers with ReproForge P1.",
+        description="Read, analyze, and prepare reproducible experiments with ReproForge P1-P3.",
     )
     parser.add_argument("--version", action="version", version=f"repro-forge {__version__}")
     subparsers = parser.add_subparsers(dest="command")
 
-    capabilities = subparsers.add_parser("capabilities", help="Show implemented P1 capabilities")
+    capabilities = subparsers.add_parser(
+        "capabilities", help="Show implemented capabilities and phase gates"
+    )
     capabilities.set_defaults(handler=_capabilities)
 
     read_pdf = subparsers.add_parser("read-pdf", help="Parse and read a local PDF")
@@ -63,6 +65,37 @@ def _build_parser() -> argparse.ArgumentParser:
     analyze_json.add_argument("--output", type=Path, help="Write the analysis as JSON")
     analyze_json.add_argument("--paper-note", type=Path, help="Optional P1 PaperNote JSON file")
     analyze_json.set_defaults(handler=_analyze_json)
+
+    # -- P3 commands ----------------------------------------------------------
+
+    generate_code = subparsers.add_parser(
+        "generate-code", help="Generate a reproduction code bundle from a MethodAnalysis JSON"
+    )
+    generate_code.add_argument("methodology", type=Path, help="MethodAnalysis JSON file")
+    generate_code.add_argument("--output", type=Path, required=True, help="Output bundle JSON file")
+    generate_code.add_argument("--force", action="store_true", help="Overwrite existing output")
+    generate_code.set_defaults(handler=_generate_code)
+
+    run_experiment = subparsers.add_parser(
+        "run-experiment", help="Run a reproduction bundle with the specified backend"
+    )
+    run_experiment.add_argument("bundle", type=Path, help="ReproductionBundle JSON file")
+    run_experiment.add_argument("--backend", choices=["dryrun", "docker"], default="dryrun")
+    run_experiment.add_argument("--output", type=Path, help="Output ExperimentRun JSON file")
+    run_experiment.add_argument("--force", action="store_true", help="Overwrite existing output")
+    run_experiment.set_defaults(handler=_run_experiment)
+
+    run_fixture = subparsers.add_parser(
+        "run-fixture", help="Run a registered CPU fixture for runner verification"
+    )
+    run_fixture.add_argument("fixture_id", help="Registered fixture ID (e.g. p3-cpu-smoke)")
+    run_fixture.add_argument(
+        "--backend", choices=["local-subprocess", "docker"], default="local-subprocess"
+    )
+    run_fixture.add_argument("--output", type=Path, help="Output ExperimentRun JSON file")
+    run_fixture.add_argument("--force", action="store_true", help="Overwrite existing output")
+    run_fixture.set_defaults(handler=_run_fixture)
+
     return parser
 
 
@@ -75,6 +108,12 @@ def _capabilities(_args: argparse.Namespace) -> int:
     print("P2 capabilities:")
     print("  methodology: MethodologyPipeline + Methodologist (evidence-grounded)")
     print("  analyze-pdf / analyze-json: extract MethodAnalysis JSON")
+    print("P3 capabilities:")
+    print("  status: Complete; P3-C passed a real digest-pinned Docker security smoke")
+    print("  code-generation: fail-closed CodeForger (requires LLM provider)")
+    print("  experiment: dryrun and immutable local fixture runner")
+    print("  docker: offline backend requiring an operator-reviewed exact image digest")
+    print("  generate-code / run-experiment / run-fixture")
     return 0
 
 
@@ -165,7 +204,7 @@ def _write_analysis(analysis: object, output: Path | None) -> None:
     payload = analysis.model_dump(mode="json")  # type: ignore[attr-defined]
     rendered = json.dumps(payload, ensure_ascii=False, indent=2)
     if output:
-        output.write_text(rendered + "\n", encoding="utf-8")
+        _atomic_write_json(analysis, output)
     else:
         print(rendered)
 
@@ -194,6 +233,86 @@ def _analyze_json(args: argparse.Namespace) -> int:
     analysis = asyncio.run(pipeline.analyze(paper, paper_note))
     _write_analysis(analysis, args.output)
     return 0
+
+
+# ---------------------------------------------------------------------------
+# P3 CLI handlers
+# ---------------------------------------------------------------------------
+
+
+def _resolve_output(output: Path, force: bool) -> None:
+    """If *output* exists and *force* is False, raise SystemExit."""
+    if output.exists() and not force:
+        raise SystemExit(f"Output file already exists: {output}. Use --force to overwrite.")
+
+
+def _atomic_write_json(obj: object, output: Path) -> None:
+    """Write *obj* as JSON to a temp file, then atomically replace *output*."""
+    import tempfile
+
+    payload = obj.model_dump(mode="json")  # type: ignore[attr-defined]
+    rendered = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix="reproforge_", dir=output.parent, text=True)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(rendered)
+            handle.flush()
+            os.fsync(handle.fileno())
+        Path(tmp).replace(output)
+    except Exception:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def _generate_code(args: argparse.Namespace) -> int:
+    _resolve_output(args.output, args.force)
+
+    from repro_forge.paper.extractor.schemas import MethodAnalysis
+    from repro_forge.reproduction.pipeline import ReproductionPipeline
+
+    analysis = MethodAnalysis.model_validate_json(args.methodology.read_text(encoding="utf-8"))
+    pipeline = ReproductionPipeline(provider=_provider())
+    bundle = asyncio.run(pipeline.generate(analysis))
+    _atomic_write_json(bundle, args.output)
+    print(f"Bundle written to {args.output}")
+    return 0
+
+
+def _run_experiment(args: argparse.Namespace) -> int:
+    output = args.output
+    if output is not None:
+        _resolve_output(output, args.force)
+
+    from repro_forge.reproduction.pipeline import ReproductionPipeline
+    from repro_forge.reproduction.schemas import ReproductionBundle
+
+    bundle = ReproductionBundle.model_validate_json(args.bundle.read_text(encoding="utf-8"))
+    pipeline = ReproductionPipeline()
+    run = asyncio.run(pipeline.execute(bundle, backend=args.backend))
+    _write_analysis(run, output)
+    return 0 if run.status == "success" else 3
+
+
+def _run_fixture(args: argparse.Namespace) -> int:
+    output = args.output
+    if output is not None:
+        _resolve_output(output, args.force)
+
+    from repro_forge.reproduction.fixtures import get_fixture
+    from repro_forge.reproduction.fixtures import list_fixtures
+    from repro_forge.reproduction.pipeline import ReproductionPipeline
+
+    if get_fixture(args.fixture_id) is None:
+        raise SystemExit(
+            f"Unknown fixture: {args.fixture_id}. Available: {', '.join(list_fixtures())}"
+        )
+
+    pipeline = ReproductionPipeline()
+    run = asyncio.run(pipeline.run_registered_fixture(args.fixture_id, backend=args.backend))
+    _write_analysis(run, output)
+    return 0 if run.status == "success" else 3
 
 
 def main(argv: Sequence[str] | None = None) -> int:

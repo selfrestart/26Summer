@@ -1,4 +1,4 @@
-"""Tests for the repro-forge CLI (P2 analyze commands)."""
+"""Tests for the repro-forge CLI (P1-P3 commands)."""
 
 import json
 
@@ -44,13 +44,16 @@ class TestCLI:
         assert not _is_local_endpoint("http://evil:8000/v1")
         assert not _is_local_endpoint("https://api.example.com/v1")
 
-    def test_help_shows_p2_commands(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_help_shows_p2_and_p3_commands(self, capsys: pytest.CaptureFixture[str]) -> None:
         with pytest.raises(SystemExit):
             main(["--help"])
         output = capsys.readouterr().out
         assert "analyze-pdf" in output
         assert "analyze-json" in output
         assert "read-pdf" in output
+        assert "generate-code" in output
+        assert "run-experiment" in output
+        assert "run-fixture" in output
 
     def test_capabilities(self, capsys: pytest.CaptureFixture[str]) -> None:
         rc = main(["capabilities"])
@@ -58,6 +61,8 @@ class TestCLI:
         assert rc == 0
         assert "P1 capabilities" in output
         assert "P2 capabilities" in output
+        assert "P3 capabilities" in output
+        assert "Complete" in output
         assert "methodology" in output
 
     def test_unknown_command_exits_nonzero(self) -> None:

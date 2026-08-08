@@ -1,10 +1,12 @@
 """ReproForge paper-reading and methodology-analysis runtime.
 
-The current P0-P2 package provides the typed agent core, OpenAI-compatible
+The current package provides the complete P0-P3 runtime:
 provider boundary, PDF/arXiv paper models, PaperReader, Methodologist,
-evidence-grounded analysis pipelines, and CLI. Code generation, experiment
-execution, memory, MCP/API, security, and evaluation remain planned P3-P8
-capabilities.
+evidence-grounded analysis pipelines, code generation (CodeForger),
+auditable bundle contracts, fail-closed code generation, dry-run, an immutable
+local fixture runner, and a digest-pinned Docker backend whose real security
+smoke covers isolation, resource controls, output collection, and cleanup.
+P4-P8 remain planned capabilities.
 """
 
 from __future__ import annotations
